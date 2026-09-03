@@ -87,3 +87,42 @@ corrected for in any script.
    rising density (of Common Tern, and possibly of Little Tern on itself) as
    a predictor, e.g. a cumulative multi-year breeding-success index. Not yet
    designed - needs a deliberate decision, see README.
+
+## Session log
+
+### Session 1 (2026-09-03)
+- Explored `Terns_Yosef_paper/re/` (Yosef's source folder), read every file
+  (docx/pptx/pdf converted via LibreOffice, xlsx via `readxl`/`openpyxl`).
+- Found and confirmed the `data1.csv` column-shift bug (see above).
+- Set up this repo, `00_build_dataset.R` (builds `master_dataset.csv`,
+  2010-2026, with 2021-2026 predictor gaps left as NA on purpose) and
+  `01_replicate_2020_baseline.R` (reran Yosef's *original* 2012-2020 model
+  set, unchanged, only with the bug fixed - NOT a new analysis, NOT extended
+  to recent years, see "Known issue" above for why that's not possible yet).
+- Result of that replication: fixing the bug changes Little Tern's top model
+  from "competition alone" (2020 report, weight 0.46) to "predation +
+  competition + heat" (weight 0.43, competition-alone now 2nd at 0.26).
+  Caveat: n=9, weights are unstable at this sample size - a bug-check
+  result, not a paper-ready finding. Worth flagging to Yosef.
+- Started going through `data_raw/` file by file with Inbal (see
+  `data_raw/README.md`, currently covers `data_2010-2020_legacy.csv` only).
+  Confirmed with Inbal: `hir`/`alb` = chicks *ringed*; `predation` = at
+  least one predation event that season (frequency not captured).
+- Opened two GitHub issues:
+  - [#1](https://github.com/Inbal-Schekler/Terns-population-crush-paper/issues/1)
+    Extend master dataset to 2026 (chicks done; weather/predation/Newcastle/
+    body-mass for 2021-2026 need to come from Yosef - no documentation of
+    the original weather data source exists in any file sent, confirmed by
+    search).
+  - [#2](https://github.com/Inbal-Schekler/Terns-population-crush-paper/issues/2)
+    Literature review on breeding-success predictors in terns/seabirds, to
+    sanity-check the current predictor set and inform the density-index
+    design.
+
+### Next session - pick up here
+- Continue the file-by-file walkthrough in `data_raw/README.md`:
+  `data1_2012-2020_legacy.csv` next (has the bug - good one to walk through
+  the fix on), then `data2_method_check_legacy.csv`, then the
+  `summary_2026.xlsx` sheets.
+- Nothing blocking - can also start issue #2 (lit review) independently
+  whenever, or wait until file walkthrough is done.
