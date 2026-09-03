@@ -15,7 +15,6 @@
 
 library(dplyr)
 library(MuMIn)
-library(rsq)
 
 options(na.action = "na.fail")  # required by MuMIn::dredge/model.sel on model sets
 
@@ -127,8 +126,8 @@ cat("\n\nCompare the top rows (delta < 2) above to סיכום 2020.pptx slides 1
 cat("2020 slide claimed for alb (Little Tern): interspecific competition alone, weight 0.46;\n")
 cat("competition + cold temp, weight 0.28. Check whether that holds with the corrected data.\n")
 
-dir.create("../output", showWarnings = FALSE)
-out_dir <- if (dir.exists("../output")) "../output" else "output"
+out_dir <- sub("data_processed$", "output", proc_dir)
+dir.create(out_dir, showWarnings = FALSE)
 sink(file.path(out_dir, "01_replication_results.txt"))
 cat("Block A - hir\n"); print(model.sel(models_hir_A[-1]))
 cat("\nBlock A - alb\n"); print(model.sel(models_alb_A[-1]))
