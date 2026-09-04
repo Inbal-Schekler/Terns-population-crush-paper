@@ -171,3 +171,25 @@ in the original script.)
 **Not used in this paper**: per Inbal, this method-comparison result was
 already analyzed and published in a separate paper. Kept here for reference
 only, not part of the current analysis pipeline.
+
+---
+
+## `summary_2026.xlsx`
+*(original filename: `סיכום 2026.xlsx`)*
+
+Yosef's annual-summary workbook, per his email mostly a copy of the 2025
+version with a 2026 column added. 8 sheets - documented one at a time below.
+
+### Sheet: `סיכום טיבוע` (ringing summary)
+
+Total individuals of each species **ringed** each year, 2010-2025 (all ages
+combined - spring migration + breeding season). Used by
+`scripts/00_build_dataset.R`? No - not currently used; the master dataset
+uses the `מספר צעירים` sheet (chicks only) instead. This sheet is broader
+(includes adults).
+
+**Confirmed with Inbal**: this sheet's numbers (e.g. 2020: 80 Little Tern,
+1,071 Common Tern) are noticeably lower than `סיכום 2020.pptx` slide 2's
+stated 2020 catch totals (101 / 1,190) because the pptx figure includes
+**recaptures** (birds already ringed in a previous year, caught again),
+while this sheet counts only newly ringed individuals.
