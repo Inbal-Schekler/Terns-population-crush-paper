@@ -263,3 +263,19 @@ NOTES.md "Density index" open item). Not corrected for here.
 
 **Gaps**: no 2010 row (table starts 2011), 2022 blank, 2026 not yet added -
 all tracked in issue #4.
+
+---
+
+## `GLM_2020_original.R`
+
+Yosef's original 2020 modeling script. For both species, fits GLMs (gaussian
+family) on every candidate combination of predictors, then uses AIC
+(AICc, via `MuMIn::model.sel()`) to select the best-supported model(s).
+Uses `data.csv` for 2010-2020, then `data1.csv` for 2012-2020 (see that
+file's entry above for the bug this introduced).
+
+## `plot_2020_original.R`
+
+Produces the counting-method boxplot figure and runs the car-vs-tower
+significance test - see `data2_method_check_legacy.csv` above (not used in
+this paper).
