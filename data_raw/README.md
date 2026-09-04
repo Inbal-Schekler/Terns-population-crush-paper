@@ -147,3 +147,27 @@ weather-driven conclusions on slides 10 and 12, for both species, are either
 statistically broken (collinear/NA) or describe the wrong variable (heat
 reported as cold, or vice versa). Worth raising with Yosef before this
 propagates into the new paper.
+
+---
+
+## `data2_method_check_legacy.csv`
+*(original filename: `data2.csv`)*
+
+**What it is**: pair-count estimates (not chick counts) for both species,
+2010–2020, labeled by which counting method produced them: `car` (רכב) vs.
+`h` (**"high"** - tower/camera method). Feeds `plot_2020_original.R`, which
+produces the boxplot figure `איור השפעת שיטה על מספר זוגות.tiff` and runs a
+t-test + Wilcoxon test comparing methods for Little Tern (`alb`) pairs:
+car mean = 140.8, tower/camera mean = 209.5, t-test p = 0.0038, Wilcoxon
+p = 0.0080 - a statistically significant ~49% difference depending purely on
+which method was used that year. (Same comparison wasn't run for `hir`
+in the original script.)
+
+**Structure**: rows 1-11 hold both species side by side (`x_alb`/`type_alb`,
+`x_hir`/`type_hir`); rows 12-22 repeat the `hir` values into the plain
+`x`/`type` columns so `boxplot(x ~ type, ...)` has one column spanning all
+4 groups.
+
+**Not used in this paper**: per Inbal, this method-comparison result was
+already analyzed and published in a separate paper. Kept here for reference
+only, not part of the current analysis pipeline.
