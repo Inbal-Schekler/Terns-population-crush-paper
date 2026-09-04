@@ -1,0 +1,59 @@
+Spring (Mar-May) mean weight, new individuals only, by species/year:
+ year Species mean_weight   n
+ 2011  STEALB    47.85000   2
+ 2012  STEALB    47.95556   9
+ 2013  STEALB    46.23333  30
+ 2014  STEALB    46.40000  10
+ 2015  STEALB    46.60000   5
+ 2016  STEALB    47.48387  62
+ 2017  STEALB    48.78571  28
+ 2018  STEALB    46.64706  51
+ 2019  STEALB    46.57143   7
+ 2020  STEALB    46.75000  10
+ 2021  STEALB    45.75000  12
+ 2022  STEALB    43.94915  59
+ 2023  STEALB    45.55556   9
+ 2024  STEALB    49.00000   1
+ 2025  STEALB    45.33333   6
+ 2026  STEALB    50.37500   8
+ 2011  STEHIR   125.80152  66
+ 2012  STEHIR   129.04157 166
+ 2013  STEHIR   123.41007 139
+ 2014  STEHIR   122.38043  92
+ 2015  STEHIR   121.53374 163
+ 2016  STEHIR   119.31214 173
+ 2017  STEHIR   117.01923  52
+ 2018  STEHIR   121.03846 130
+ 2019  STEHIR   124.34426 122
+ 2020  STEHIR   134.95082  61
+ 2021  STEHIR   117.54144 181
+ 2022  STEHIR   118.04082 196
+ 2023  STEHIR   124.70652 184
+ 2024  STEHIR   122.51429  35
+ 2025  STEHIR   118.51220  41
+ 2026  STEHIR   124.66667  27
+
+Comparison to reported hirMASS/albMASS (data1.csv, 2012-2020):
+ year Species reported_mass computed_mean_weight   n        diff
+ 2012  STEALB          47.4             47.95556   9  0.55555556
+ 2013  STEALB          46.5             46.23333  30 -0.26666667
+ 2014  STEALB          45.8             46.40000  10  0.60000000
+ 2015  STEALB          47.1             46.60000   5 -0.50000000
+ 2016  STEALB          47.1             47.48387  62  0.38387097
+ 2017  STEALB          48.5             48.78571  28  0.28571429
+ 2018  STEALB          46.4             46.64706  51  0.24705882
+ 2019  STEALB          46.5             46.57143   7  0.07142857
+ 2020  STEALB          47.0             46.75000  10 -0.25000000
+ 2012  STEHIR         129.2            129.04157 166 -0.15843373
+ 2013  STEHIR         123.2            123.41007 139  0.21007194
+ 2014  STEHIR         122.0            122.38043  92  0.38043478
+ 2015  STEHIR         121.3            121.53374 163  0.23374233
+ 2016  STEHIR         118.8            119.31214 173  0.51213873
+ 2017  STEHIR         117.5            117.01923  52 -0.48076923
+ 2018  STEHIR         120.1            121.03846 130  0.93846154
+ 2019  STEHIR         124.5            124.34426 122 -0.15573770
+ 2020  STEHIR         133.0            134.95082  61  1.95081967
+
+Mean absolute difference: 0.454 g
+Max absolute difference:  1.951 g
+Correlation: 0.9999 
