@@ -218,3 +218,48 @@ to 2019) to single digits every year since 2023.
 **Open item**: the 2026 Little Tern value (4) needs Inbal's confirmation -
 per Yosef's email this file may still hold last year's placeholder. See
 issue #4.
+
+### Sheet: `מספר זוגות בעתלית - רב שנתי` (breeding pairs at Atlit, multi-year)
+
+Breeding pair counts per species per year, 2011-2025, each year labeled with
+the counting method used that year. This is the density data behind Yosef's
+suggestion to model rising Common Tern density as a predictor of Little
+Tern breeding success.
+
+```
+Year   Common Tern   Little Tern   Method
+2011      430          170         רכב (car)
+2012      490          105         רכב
+2013      550          135         רכב
+2014      525          176         מצלמה אחת / מגדל (one camera/tower)
+2015      530          214         מצלמה אחת / מגדל
+2016      735          222         מצלמה אחת / מגדל
+2017      734          241         מצלמה אחת / מגדל
+2018      898          233         מצלמה אחת / מגדל
+2019      754          171         מצלמה אחת / מגדל
+2020      550          124         רכב
+2021      550          185         רכב
+2022        -            -         (blank - gap, see issue #4)
+2023     1149          185         שתי מצלמות (two cameras)
+2024     1155          156         שתי מצלמות
+2025     1297          138         שתי מצלמות
+```
+
+**Pattern**: Common Tern pairs show a large apparent rise (430 -> ~1,300)
+while Little Tern stays roughly flat (105-241) throughout, regardless of
+method - the empirical basis for Yosef's density/competition idea.
+
+**Caveat - three different counting methods across the series**: car (2011-
+2013, 2020-2021), one camera/tower (2014-2019), two cameras (2023-2025).
+Confirmed with Inbal: "two cameras" is better coverage of the same colony,
+not a different estimation procedure. That still means detection improves
+over time (more of the true population gets counted), which is the same
+direction of bias as the car-vs-tower difference already demonstrated
+statistically in `data2_method_check_legacy.csv` (car undercounts relative
+to tower, p<0.01 for Little Tern). So at least part of the Common Tern rise
+across this table is plausibly a *detection* improvement, not purely a real
+population increase - relevant to how the density index gets built (see
+NOTES.md "Density index" open item). Not corrected for here.
+
+**Gaps**: no 2010 row (table starts 2011), 2022 blank, 2026 not yet added -
+all tracked in issue #4.
