@@ -193,3 +193,28 @@ uses the `מספר צעירים` sheet (chicks only) instead. This sheet is broa
 stated 2020 catch totals (101 / 1,190) because the pptx figure includes
 **recaptures** (birds already ringed in a previous year, caught again),
 while this sheet counts only newly ringed individuals.
+
+Note: the other 5 sheets in this workbook (`כללי`, `גיליון1`, `חו"ל`,
+`חו"ל (2)`, `מספר זוגות ע"י אלגוריתם`) are not needed for this paper -
+skipped per Inbal, not documented here.
+
+### Sheet: `מספר צעירים` (number of chicks)
+
+**The headline data for this paper.** Chicks ringed per species per year,
+2010-2026 - this is what `00_build_dataset.R` uses for `chicks_alb`/
+`chicks_hir`, and matches `data_2010-2020_legacy.csv`'s `alb`/`hir` columns
+exactly for the overlapping years. Same definition, confirmed with Inbal:
+chicks ringed that season.
+
+```
+                2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020 2021 2022 2023 2024 2025 2026
+שחפית גמדית       22   34   96   65   95  104   44    9   67   56   11   63   72   16   21    5    4
+שחפית ים          28   96  101   74   54  227   22   39  198  309  242  271  315  209   82  179  165
+```
+
+This is the crash: Little Tern chicks drop from double/triple digits (up
+to 2019) to single digits every year since 2023.
+
+**Open item**: the 2026 Little Tern value (4) needs Inbal's confirmation -
+per Yosef's email this file may still hold last year's placeholder. See
+issue #4.
