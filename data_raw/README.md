@@ -353,3 +353,17 @@ implies a real capture regardless of who's listed as ringer.
 - Cols 32-36 (`Origin Ringing Data - only for foreign birds`) - self-explanatory label, blank in the rows checked so far.
 - Cols 37-41 (`Old colour rings`, `Old metal rings`) - previous ring code, for birds that had a ring replaced?
 - Cols 42-47 (`Oil (0-3)`: Head/Wings/UpperP/UnderP/Legs/Sum) - oil-contamination scoring by body region, fairly confident on this one.
+
+### Mass calculation - confirmed (issue #5, task 1)
+
+`scripts/02_reverse_engineer_mass.R` confirmed Inbal's hypothesis: `hirMASS`/
+`albMASS` = mean `Weight` of new (non-recapture) individuals caught in
+spring (March-May), per species per year. Reproduces the known 2012-2020
+values almost exactly (r=0.9999, mean abs diff 0.45g). Now used as the
+single source for `hirMASS`/`albMASS` in `master_dataset_2010_2026.csv`,
+2011-2026 (superseding `data1.csv`'s 2012-2020-only values).
+
+**Caveat - some years rest on very few individuals**: sample sizes (`n`)
+range from 1 (Little Tern, 2024) to 196 (Common Tern, 2022). Little Tern
+2011 (n=2) and 2024 (n=1) in particular are not statistically meaningful
+averages - full table in `output/02_mass_reverse_engineering.txt`.

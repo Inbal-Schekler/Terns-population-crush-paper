@@ -121,10 +121,46 @@ corrected for in any script.
     sanity-check the current predictor set and inform the density-index
     design.
 
+### Session 2 (2026-09-04)
+- Finished the file-by-file walkthrough of `data_raw/`: `data1.csv` bug
+  (full mechanism + verified consequences on Yosef's 2020 results, incl. a
+  demonstrated collinearity/NA case), `data2.csv` (not used in this paper,
+  documented for reference only), the 3 relevant `summary_2026.xlsx` sheets,
+  and both original R scripts. All in `data_raw/README.md`.
+- Opened issue #3 (merge data.csv+data1.csv; reverse-engineer mass) and
+  issue #4 (2026 numbers - Yosef's part and Inbal's part).
+- Cleaned up file duplication: `re/`'s top-level copies of data.csv,
+  data1.csv, data2.csv, GLM.R, plot.R, סיכום 2026.xlsx, Terns Data.xlsx
+  deleted (verified byte-identical to `analysis/data_raw/` first) -
+  `analysis/data_raw/` is now the single canonical copy.
+- Inbal obtained the full raw ringing database from Yosef
+  (`data_raw/ringing_data_raw.xlsx`, local-only/gitignored, 66k+ records
+  with individual `Weight`). Documented its `Data` sheet's columns in
+  `data_raw/README.md`, including the `Rec` column (blank=new ringing,
+  `R`=recapture, other=foreign-origin bird) and the `Ringer` column trick
+  (Yosef or Ohad Hatzofe = real capture; anyone else = field observation).
+- Added Inbal's 2026 pairs count to the actual xlsx source (not just the
+  output CSV) and moved the Hebrew->English `pairs_method` translation into
+  `00_build_dataset.R` itself, so it's not a manual edit that silently gets
+  overwritten on the next script run. Renamed output to
+  `master_dataset_2010_2026.csv`.
+- Opened issue #5 (mass investigation, 4 tasks). Completed task 1:
+  `scripts/02_reverse_engineer_mass.R` confirmed Inbal's hypothesis (spring
+  Mar-May mean weight, new/non-recapture individuals only) reproduces the
+  known 2012-2020 hirMASS/albMASS almost exactly (r=0.9999). Used this to
+  replace `master_dataset_2010_2026.csv`'s hirMASS/albMASS columns with a
+  consistently-computed series covering 2011-2026 (previously NA outside
+  2012-2020). Caveat: some years rest on very few individuals (Little Tern
+  2011 n=2, 2024 n=1) - see `data_raw/README.md`.
+
 ### Next session - pick up here
-- Continue the file-by-file walkthrough in `data_raw/README.md`:
-  `data1_2012-2020_legacy.csv` next (has the bug - good one to walk through
-  the fix on), then `data2_method_check_legacy.csv`, then the
-  `summary_2026.xlsx` sheets.
-- Nothing blocking - can also start issue #2 (lit review) independently
-  whenever, or wait until file walkthrough is done.
+- Issue #5, remaining tasks 2-4: breeding-only mass (filter to summer
+  presence), mass-vs-year correlation per species, within-season mass
+  trajectory (and whether it's shifted in the most recent year).
+- Issue #1/#3 still need Yosef's input: weather/predation/Newcastle for
+  2021-2026 (no documentation of his original data source found anywhere -
+  need to ask him directly), and confirmation of the 2026 Little Tern chick
+  count.
+- Issue #2 (lit review) not started - can run independently whenever.
+- Issue #4: still waiting on Yosef for the `סיכום טיבוע` 2026 column, and
+  on the 2022 pairs gap.

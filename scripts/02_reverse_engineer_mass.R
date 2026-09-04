@@ -98,4 +98,28 @@ cat("Correlation:", round(cor(comparison$reported_mass, comparison$computed_mean
 sink()
 cat("\nFull results written to", file.path(out_dir, "02_mass_reverse_engineering.txt"), "\n")
 
-write.csv(spring_mass, file.path(sub("output$", "data_processed", out_dir), "spring_mass_by_year_species.csv"), row.names = FALSE)
+proc_dir <- sub("output$", "data_processed", out_dir)
+write.csv(spring_mass, file.path(proc_dir, "spring_mass_by_year_species.csv"), row.names = FALSE)
+
+# ---- Update master_dataset_2010_2026.csv's hirMASS/albMASS columns -----
+# Confirmed above that this spring/new-individuals metric reproduces
+# Yosef's original 2012-2020 values almost exactly (r=0.9999), so we now
+# use it as the single, consistent source for hirMASS/albMASS across ALL
+# years (2011-2026) - superseding data1.csv's 2012-2020-only values, which
+# 00_build_dataset.R had been using.
+mass_wide <- spring_mass %>%
+  mutate(col = ifelse(Species == "STEHIR", "hirMASS_new", "albMASS_new"),
+         mean_weight = round(mean_weight, 1)) %>%
+  select(year, col, mean_weight) %>%
+  tidyr::pivot_wider(names_from = col, values_from = mean_weight)
+
+master_path <- file.path(proc_dir, "master_dataset_2010_2026.csv")
+master <- read.csv(master_path) %>%
+  select(-hirMASS, -albMASS) %>%
+  left_join(mass_wide, by = "year") %>%
+  rename(hirMASS = hirMASS_new, albMASS = albMASS_new)
+
+write.csv(master, master_path, row.names = FALSE, na = "NA")
+cat("\nUpdated", master_path, "with spring-mass-derived hirMASS/albMASS (2011-2026).\n")
+cat("Sample sizes (n) behind each year's mean - small n means less reliable:\n")
+print(as.data.frame(spring_mass %>% select(year, Species, n)), row.names = FALSE)
