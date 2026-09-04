@@ -70,7 +70,7 @@ interspecific-competition and body-condition terms on top of a subset of
 | `predation` | **Corrupted / unusable** | See bug below |
 | `rainMAY`, `rainJUN`, `newcastle` | **Not present** | Dropped entirely vs. `data_2010-2020_legacy.csv` — matches `GLM.R`, which doesn't test rain/Newcastle in this block |
 | `hirTWOyears`, `albTWOyears` | **Correct, new** | The *other* species' chick count 2 years prior (interspecific-competition proxy). Checked against `data_2010-2020_legacy.csv`'s lagged values — matches. |
-| `hirMASS`, `albMASS` | **Trusted, unverifiable** | Pre-breeding average body mass (g). Not derivable from any other file we have, so can't cross-check independently. Source/method unknown — ask Yosef (also needed to extend past 2020, see main `NOTES.md`). |
+| `hirMASS`, `albMASS` | **Trusted, unverifiable** | Pre-breeding average body mass (g), presumably spring adults. Searched every file in the folder (docx, pptx, R scripts, all CSVs, and the 8,490-record raw ringing sheet `גיליון1`) for "mass"/"weight"/משקל/גרם — the word `MASS` only occurs as these two column headers. No documentation of the method (date window, sample size, ages included), and no individual-level records to recompute or verify these 9 numbers from. Ask Yosef for the underlying raw mass measurements, not just the 2021-2026 summary numbers — see issue #1. |
 
 Also starts 2 years later than `data_2010-2020_legacy.csv` (2012 vs. 2010) —
 consistent with needing a 2-year lag for `hirTWOyears`/`albTWOyears`.
