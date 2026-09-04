@@ -62,8 +62,8 @@ the buggy data):
 `data2.csv` / the boxplot figure show camera-tower pair counts running
 noticeably higher than car-based counts for both species. The method
 actually changed across the study period (see `pairs_method` column in
-`master_dataset.csv`: car 2011-2013, camera/tower 2014-2020ish, car again
-2020-2021, two cameras 2023-2025). This means part of the apparent rise in
+`master_dataset_2010_2026.csv`: car 2011-2013, camera/tower 2014-2020ish, car
+again 2020-2021, two cameras 2023-2026). This means part of the apparent rise in
 Common Tern pairs over time could be a detection-method artifact rather than
 a true increase - relevant if Common Tern density/pair count is used as a
 predictor of Little Tern breeding success, per Yosef's suggestion. Not yet
@@ -75,14 +75,16 @@ corrected for in any script.
    is mostly a copy of the 2025 file - confirm/update the actual 2026 count
    (currently shows 4 in the sheet).
 2. **Weather, predation, Newcastle-disease flags for 2021-2026.** Not present
-   anywhere in the folder Yosef sent - `master_dataset.csv` has these as NA
-   for those years. Needed to extend the GLM past 2020.
+   anywhere in the folder Yosef sent - `master_dataset_2010_2026.csv` has
+   these as NA for those years. Needed to extend the GLM past 2020.
 3. **Pre-breeding body mass (`hirMASS`/`albMASS`) for 2021-2026.** Also not
    present in `summary_2026.xlsx` - source unknown (data1.csv's values for
    2012-2020 presumably came from a separate ringing/biometrics database not
    included here).
 4. **2022 pair counts** are missing in the source workbook itself
-   (`מספר זוגות בעתלית - רב שנתי` sheet has a blank row for 2022).
+   (`מספר זוגות בעתלית - רב שנתי` sheet has a blank row for 2022). 2026 pair
+   counts were added by Inbal directly to this sheet (2026-09-04): 1063
+   Common Tern / 67 Little Tern pairs, two-cameras method.
 5. **Density index for the paper's model.** Yosef suggested representing
    rising density (of Common Tern, and possibly of Little Tern on itself) as
    a predictor, e.g. a cumulative multi-year breeding-success index. Not yet

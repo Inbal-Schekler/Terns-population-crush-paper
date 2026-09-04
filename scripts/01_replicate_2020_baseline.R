@@ -20,7 +20,7 @@ options(na.action = "na.fail")  # required by MuMIn::dredge/model.sel on model s
 
 proc_dir <- "data_processed"
 if (!dir.exists(proc_dir)) proc_dir <- "../data_processed"
-master <- read.csv(file.path(proc_dir, "master_dataset.csv"))
+master <- read.csv(file.path(proc_dir, "master_dataset_2010_2026.csv"))
 
 # ------------------------------------------------------------------------
 # Block A: 2010-2020 (11 years), weather + predation + newcastle only

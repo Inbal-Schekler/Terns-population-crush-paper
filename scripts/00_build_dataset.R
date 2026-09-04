@@ -39,10 +39,15 @@ chicks_alb <- as.numeric(chicks_raw[3, -1])
 chicks_hir <- as.numeric(chicks_raw[4, -1])
 chicks <- data.frame(year = years, chicks_alb = chicks_alb, chicks_hir = chicks_hir)
 
-# ---- 2. pair counts + counting method, 2011-2025, both species -------------
+# ---- 2. pair counts + counting method, 2011-2026, both species -------------
 pairs_raw <- read_excel(xlsx_path, sheet = "מספר זוגות בעתלית - רב שנתי", col_names = TRUE)
 names(pairs_raw) <- c("year", "pairs_hir", "pairs_alb", "pairs_method")
 pairs_raw$year <- as.numeric(pairs_raw$year)
+pairs_raw$pairs_method <- recode(pairs_raw$pairs_method,
+  "רכב" = "Car",
+  "מצלמה אחת / מגדל" = "One camera/tower",
+  "שתי מצלמות" = "2 cameras"
+)
 
 # ---- 3. weather / predation / newcastle, 2010-2020 (verified source) -------
 legacy <- read.csv(file.path(raw_dir, "data_2010-2020_legacy.csv"), stringsAsFactors = FALSE)
@@ -71,7 +76,7 @@ master <- chicks %>%
 
 proc_dir <- sub("data_raw$", "data_processed", raw_dir)
 dir.create(proc_dir, showWarnings = FALSE)
-out_path <- file.path(proc_dir, "master_dataset.csv")
+out_path <- file.path(proc_dir, "master_dataset_2010_2026.csv")
 write.csv(master, out_path, row.names = FALSE, na = "NA")
 
 cat("Master dataset written to:", normalizePath(out_path), "\n")

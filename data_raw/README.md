@@ -261,8 +261,15 @@ across this table is plausibly a *detection* improvement, not purely a real
 population increase - relevant to how the density index gets built (see
 NOTES.md "Density index" open item). Not corrected for here.
 
-**Gaps**: no 2010 row (table starts 2011), 2022 blank, 2026 not yet added -
-all tracked in issue #4.
+**Gaps**: no 2010 row (table starts 2011), 2022 blank (still open, see
+issue #4). 2026 row added by Inbal (2026-09-04): 1063 Common Tern / 67
+Little Tern pairs, two-cameras method.
+
+**Method labels translated to English at build time**: `00_build_dataset.R`
+recodes `רכב`->`Car`, `מצלמה אחת / מגדל`->`One camera/tower`,
+`שתי מצלמות`->`2 cameras` when building `master_dataset_2010_2026.csv`. The
+sheet itself stays in Hebrew (source of truth); translation happens in the
+script so it isn't a manual, easily-overwritten edit on the output file.
 
 ---
 
