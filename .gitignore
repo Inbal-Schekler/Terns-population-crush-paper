@@ -4,3 +4,6 @@
 *.Rproj
 ~$*
 .~lock.*#
+
+# Kept local-only per Inbal - raw individual ringing database (66k+ records)
+data_raw/ringing_data_raw.xlsx

@@ -279,3 +279,17 @@ file's entry above for the bug this introduced).
 Produces the counting-method boxplot figure and runs the car-vs-tower
 significance test - see `data2_method_check_legacy.csv` above (not used in
 this paper).
+
+---
+
+## `ringing_data_raw.xlsx` (local-only, not in git)
+*(original filename: `Terns Data.xlsx`)*
+
+Full raw ringing database from Yosef, obtained by Inbal specifically to
+calculate `hirMASS`/`albMASS` for 2021-2026 (issue #3). 12 sheets; the
+`Data` sheet is the individual-record master table (66,414 rows x 48 cols)
+with a `Weight` column per capture.
+
+**Kept out of git per Inbal** (`.gitignore`'d) - 11MB, well under GitHub's
+limits, so this is a repo-hygiene preference, not a technical constraint.
+Present locally in `data_raw/` for scripts to read, just never committed.
