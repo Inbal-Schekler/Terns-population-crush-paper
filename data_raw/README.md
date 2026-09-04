@@ -300,3 +300,47 @@ with a `Weight` column per capture.
 **Kept out of git per Inbal** (`.gitignore`'d) - 11MB, well under GitHub's
 limits, so this is a repo-hygiene preference, not a technical constraint.
 Present locally in `data_raw/` for scripts to read, just never committed.
+
+### `Data` sheet - column reference
+
+66,414 rows x 48 columns, 2-row header. Standard European ringing-scheme
+record format. One row = one encounter (ringing, retrap, or field
+observation) of one bird.
+
+**How to tell ringing/retrap apart from a field observation** (confirmed
+with Inbal): only Yosef does the actual ringing/handling at Atlit. If the
+`Ringer` column names anyone else, that row is a field observation (ring
+read at a distance), not a capture. Also: `Wing`/`Weight` are only ever
+populated when the bird was physically in hand - so a non-blank `Weight`
+implies a real capture regardless of who's listed as ringer.
+
+**Still open**: distinguishing *new ringing* vs. *recapture/retrap* among
+Yosef-handled rows (both would show `Ringer = Yosef`) likely depends on the
+`Rec` column (col 3). Values found so far: blank, `R`, `[R]`, `IL`, `A`,
+`F` - don't yet know which code(s) mean "recapture." This is the key
+thing to nail down before task 1 in issue #5 (need "recapture: yes/no").
+
+**Confirmed columns**:
+
+| # | Column | Meaning |
+|---|---|---|
+| 3 | `Rec` | Record type code - see "still open" above |
+| 4-5 | `Ring` / `Number` | Metal ring prefix + serial number |
+| 6 | `Species` | 6-letter code (genus3+species3). Found: `STEALB` (Little Tern), `STEHIR` (Common Tern), `STESAN` (Sandwich Tern), `STEREP` (White-cheeked Tern) |
+| 7 | `Sex` | M/F/unknown |
+| 8 | `Age` | Standard EURING age code. Confirmed with Inbal: values run up to 49 (not the typical 1-9) because terns can live ~20 years and EURING's known-hatch-year coding extends the scale accordingly for older known-age birds |
+| 9 | `Wing` | Wing chord length (mm) - capture only |
+| **10** | **`Weight`** | **Body mass (g) - capture only. The column this whole investigation (issue #5) is about** |
+| 11-12 | `Date`/`Time` | Capture/observation date and time |
+| 13-16 | `Place`/`Lat`/`Lon`/`Ringer` | Location, coordinates, person who handled/observed the bird |
+| 17 | `Country` | Presumably blank = Israel |
+| 18-19 | `Remarks`/`Net` | Free text / mist net number |
+| 21-23 | `Subsp`/`Tail`/`Head` | Subspecies, tail length, head+bill length (mm) |
+
+**Still uncertain, not yet confirmed with Inbal**:
+- Col 1 (`Index`/`CR`, e.g. `WE83`) vs. col 20 (`CR`, e.g. `E83`) - two related "CR" (colour ring?) columns, guess: full code vs. code without a colour-prefix letter.
+- Col 2 `Ring replace` (e.g. `+`) - flag for a replaced ring?
+- Cols 24-29 (`Breeding`, `Character position` 1-4, `Colour`) - possibly encoding the colour-ring's design/lettering, unclear.
+- Cols 32-36 (`Origin Ringing Data - only for foreign birds`) - self-explanatory label, blank in the rows checked so far.
+- Cols 37-41 (`Old colour rings`, `Old metal rings`) - previous ring code, for birds that had a ring replaced?
+- Cols 42-47 (`Oil (0-3)`: Head/Wings/UpperP/UnderP/Legs/Sum) - oil-contamination scoring by body region, fairly confident on this one.
