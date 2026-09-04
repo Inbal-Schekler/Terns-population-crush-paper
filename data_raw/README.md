@@ -314,17 +314,26 @@ read at a distance), not a capture. Also: `Wing`/`Weight` are only ever
 populated when the bird was physically in hand - so a non-blank `Weight`
 implies a real capture regardless of who's listed as ringer.
 
-**Still open**: distinguishing *new ringing* vs. *recapture/retrap* among
-Yosef-handled rows (both would show `Ringer = Yosef`) likely depends on the
-`Rec` column (col 3). Values found so far: blank, `R`, `[R]`, `IL`, `A`,
-`F` - don't yet know which code(s) mean "recapture." This is the key
-thing to nail down before task 1 in issue #5 (need "recapture: yes/no").
+**`Rec` column (col 3) - confirmed with Inbal**:
+- `R` = **recapture** (bird originally ringed at Atlit, caught again)
+- blank = new ringing at Atlit
+- `IL`, and other short codes (`A`, `F`, etc.) = the bird was ringed under a
+  **different/foreign ringing scheme** - identifiable because the ring
+  number format differs from Atlit's own numbering. `IL` likely marks a
+  different Israeli scheme/ringer than Yosef's Atlit series, `A`/`F`-style
+  codes are presumably other countries' scheme codes. These rows should
+  line up with the (so far unseen populated) "Origin Ringing Data - only
+  for foreign birds" column group (cols 32-36).
+- Not yet confirmed: whether foreign-origin rows ever have `Wing`/`Weight`
+  filled in (i.e. represent an actual in-hand control at Atlit) vs. always
+  being blank (i.e. just a distant resighting report) - matters for
+  filtering, since either way these aren't new Atlit ringing events.
 
 **Confirmed columns**:
 
 | # | Column | Meaning |
 |---|---|---|
-| 3 | `Rec` | Record type code - see "still open" above |
+| 3 | `Rec` | Record type - see above: blank=new ringing, `R`=recapture, other codes=foreign-origin bird |
 | 4-5 | `Ring` / `Number` | Metal ring prefix + serial number |
 | 6 | `Species` | 6-letter code (genus3+species3). Found: `STEALB` (Little Tern), `STEHIR` (Common Tern), `STESAN` (Sandwich Tern), `STEREP` (White-cheeked Tern) |
 | 7 | `Sex` | M/F/unknown |
