@@ -153,10 +153,29 @@ corrected for in any script.
   2012-2020). Caveat: some years rest on very few individuals (Little Tern
   2011 n=2, 2024 n=1) - see `data_raw/README.md`.
 
+### Session 3 (2026-09-06)
+- Issue #5, task 2: breeding-only mass metric, `scripts/03_breeding_mass.R`.
+  Discovered (before implementing, confirmed with Inbal) that a naive
+  "new individuals caught in summer" filter is dominated by **this-year
+  chicks/juveniles** (EURING age 1/3), not adults - e.g. Common Tern July:
+  1,442 juveniles vs. 1,808 adults. Fixed by restricting to adult age codes
+  only. Window: June-July (confirmed with Inbal), new/non-recapture
+  individuals only, same convention as the spring metric.
+  Result: breeding-season adults weigh consistently less than spring
+  arrivals - Common Tern ~7.8g lower on average, weakly correlated with
+  spring value (r=-0.03, i.e. the drop is a fairly constant offset,
+  decoupled from year-to-year pre-breeding condition); Little Tern ~2.3g
+  lower, more correlated with spring (r=0.57). Biologically consistent with
+  incubation/chick-rearing costs. Output:
+  `data_processed/breeding_mass_by_year_species.csv`,
+  `output/03_breeding_mass.txt`. Not merged into
+  `master_dataset_2010_2026.csv` - kept as a separate comparison metric per
+  task 2's wording ("build a second version").
+
 ### Next session - pick up here
-- Issue #5, remaining tasks 2-4: breeding-only mass (filter to summer
-  presence), mass-vs-year correlation per species, within-season mass
-  trajectory (and whether it's shifted in the most recent year).
+- Issue #5, remaining tasks 3-4: mass-vs-year correlation per species,
+  within-season mass trajectory (and whether it's shifted in the most
+  recent year) for breeding individuals specifically.
 - Issue #1/#3 still need Yosef's input: weather/predation/Newcastle for
   2021-2026 (no documentation of his original data source found anywhere -
   need to ask him directly), and confirmation of the 2026 Little Tern chick
