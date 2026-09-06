@@ -354,34 +354,41 @@ implies a real capture regardless of who's listed as ringer.
 - Cols 37-41 (`Old colour rings`, `Old metal rings`) - previous ring code, for birds that had a ring replaced?
 - Cols 42-47 (`Oil (0-3)`: Head/Wings/UpperP/UnderP/Legs/Sum) - oil-contamination scoring by body region, fairly confident on this one.
 
-### Mass calculation - confirmed (issue #5, task 1)
+### Mass analysis (issue #5) - see `scripts/02_mass_analysis.Rmd`
 
-`scripts/02_reverse_engineer_mass.R` confirmed Inbal's hypothesis: `hirMASS`/
-`albMASS` = mean `Weight` of new (non-recapture) individuals caught in
-spring (March-May), per species per year. Reproduces the known 2012-2020
-values almost exactly (r=0.9999, mean abs diff 0.45g). Now used as the
-single source for `hirMASS`/`albMASS` in `master_dataset_2010_2026.csv`,
-2011-2026 (superseding `data1.csv`'s 2012-2020-only values).
+All mass-metric work (tasks 1-2 plus a follow-up refinement) is
+consolidated in one knittable report, `scripts/02_mass_analysis.Rmd`
+(rendered: `output/02_mass_analysis.html`) - superseding the former
+`02_reverse_engineer_mass.R` / `03_breeding_mass.R` scripts (deleted).
+Summary of what it contains and found:
 
-**Caveat - some years rest on very few individuals**: sample sizes (`n`)
-range from 1 (Little Tern, 2024) to 196 (Common Tern, 2022). Little Tern
-2011 (n=2) and 2024 (n=1) in particular are not statistically meaningful
-averages - full table in `output/02_mass_reverse_engineering.txt`.
-
-### Breeding-only mass metric - `Age` column matters (issue #5, task 2)
-
-`scripts/03_breeding_mass.R` builds a second mass metric, restricted to
-June-July (vs. the spring metric's March-May), as a proxy for actual
-breeders rather than passage migrants. Naively reusing the spring metric's
-filter (new/non-recapture individuals) on the summer window does NOT work:
-summer catches are dominated by **this-year chicks/juveniles** (EURING age
-1 = pullus, age 3 = this-calendar-year juvenile), since chicks are ringed
-in the nest throughout the breeding season. E.g. Common Tern, July: 1,442
-juveniles (age 3) vs. 1,808 adults (age 6). Fixed by excluding age 1 and 3,
-keeping only adult codes (4, 5, 6, and the two-digit known-exact-hatch-year
-adult codes, e.g. 14/22/25/28/29/35/37). Result: breeding-season adults
-weigh consistently less than spring arrivals (Common Tern ~7.8g lower,
-~decoupled from spring value year-to-year, r=-0.03; Little Tern ~2.3g
-lower, more correlated with spring, r=0.57) - consistent with
-incubation/chick-rearing costs. Full comparison in
-`output/03_breeding_mass.txt`.
+- **Spring mass** (task 1, confirmed): `hirMASS`/`albMASS` = mean `Weight`
+  of new (non-recapture) individuals caught in spring (March-May), per
+  species per year. Reproduces the known 2012-2020 values almost exactly
+  (r=0.9999, mean abs diff 0.45g). Single source for `hirMASS`/`albMASS`
+  in `master_dataset_2010_2026.csv`, 2011-2026. Caveat - some years rest on
+  very few individuals: `n` ranges from 1 (Little Tern, 2024) to 196
+  (Common Tern, 2022).
+- **Breeding-season mass** (task 2): restricted to June-July, as a proxy
+  for actual breeders rather than passage migrants. Naively reusing the
+  spring filter (new/non-recapture individuals) on the summer window does
+  NOT work: summer catches are dominated by **this-year chicks/juveniles**
+  (EURING age 1 = pullus, age 3 = this-calendar-year juvenile). E.g.
+  Common Tern, July: 1,442 juveniles (age 3) vs. 1,808 adults (age 6).
+  Fixed by excluding age 1 and 3, keeping only adult codes (4, 5, 6, and
+  the two-digit known-exact-hatch-year codes, e.g. 14/22/25/28/29/35/37).
+  Result: breeding-season adults weigh consistently less than spring
+  arrivals (Common Tern ~7.8g lower, decoupled from spring value
+  year-to-year, r=-0.03; Little Tern ~2.3g lower, more correlated with
+  spring, r=0.57) - consistent with incubation/chick-rearing costs.
+- **Confirmed-breeder spring mass** (follow-up, Inbal's request): spring
+  adults further restricted to those also recorded (recapture or
+  resighting, matched by `RingPrefix`+`RingNum`) in June/July of the same
+  year - stronger evidence they stayed to breed. Caveat: 1,383 records
+  sheet-wide are flagged `RingReplace` (physical ring changed), which
+  breaks this ring-number matching for those individuals. Result: Common
+  Tern confirmed breeders significantly lighter than the general spring
+  cohort (~4.5g, p<0.001, holds after controlling for year); Little Tern
+  shows no raw difference (p=0.14-0.2) but a significant POSITIVE effect
+  once year is controlled for (+1.57g, p=0.02) - a year confound was
+  masking the signal in the pooled test.

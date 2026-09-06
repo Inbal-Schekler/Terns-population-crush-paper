@@ -1,0 +1,366 @@
+---
+title: "Terns body mass analysis"
+subtitle: "Atlit Common Tern & Little Tern ringing data - issue #5"
+date: "`r format(Sys.Date())`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                       fig.width = 8, fig.height = 5)
+library(readxl)
+library(dplyr)
+library(lubridate)
+library(tidyr)
+library(ggplot2)
+library(knitr)
+```
+
+# Background
+
+The paper is investigating what drives Little Tern breeding-success collapse
+at Atlit, alongside the rise in Common Tern numbers. One candidate factor is
+adult body condition (mass). This report builds and compares three versions
+of a yearly, per-species mass metric from the raw ringing database
+(`data_raw/ringing_data_raw.xlsx`, 66k+ individual records, local-only/not in
+git - see `data_raw/README.md`):
+
+1. **Spring (pre-breeding) mass** - the metric that reproduces Yosef's
+   original `hirMASS`/`albMASS` columns (issue #5, task 1).
+2. **Breeding-season mass** - restricted to June-July and to adults, as a
+   proxy for actual Atlit breeders rather than passage migrants (issue #5,
+   task 2).
+3. **Confirmed-breeder spring mass** - a refinement of (1): spring-caught
+   adults restricted further to individuals also encountered in June or
+   July of the *same* year, i.e. more confident they stayed to breed at
+   Atlit rather than just stopping over. Compared statistically against the
+   full spring cohort.
+
+This supersedes `scripts/02_reverse_engineer_mass.R` and
+`scripts/03_breeding_mass.R`, consolidated here so all three metrics and
+their comparisons are in one knittable report.
+
+# Data loading
+
+```{r load-data}
+raw_dir <- "../data_raw"
+if (!dir.exists(raw_dir)) raw_dir <- "data_raw"
+stopifnot(dir.exists(raw_dir))
+
+proc_dir <- "../data_processed"
+if (!dir.exists(proc_dir)) proc_dir <- "data_processed"
+
+out_dir <- "../output"
+if (!dir.exists(out_dir)) out_dir <- "output"
+
+ringing_path <- file.path(raw_dir, "ringing_data_raw.xlsx")
+stopifnot(file.exists(ringing_path))
+
+# The sheet has a 2-row merged header with duplicate leaf names (two "Date"
+# columns, two "CR" columns), which readxl's auto name-repair mangles
+# unpredictably. Skip both header rows and assign names explicitly, using
+# the column mapping verified against data_raw/README.md. The leading "#"
+# column (col 1 in the spreadsheet) is entirely empty and readxl drops it
+# outright, so the real data is 47 columns, not 48.
+col_names_47 <- c(
+  "CR1","RingReplace","Rec","RingPrefix","RingNum","Species","Sex","Age","Wing","Weight",
+  "Date","Time","Place","Lat","Lon","Ringer","Country","Remarks","Net","CR2","Subsp","Tail","Head",
+  "Breeding","CP1","CP2","CP3","CP4","Colour","D","M","OrigDate","OrigCountry","OrigLat","OrigLon","OrigAge",
+  "OldCR1","OldCR2","OldCR3","OldMetal1","OldMetal2","OilHead","OilWings","OilUpperP","OilUnderP","OilLegs","OilSum"
+)
+raw <- read_excel(ringing_path, sheet = "Data", skip = 2, col_names = col_names_47)
+
+# EURING age codes present in this sheet: 1 = pullus (nestling), 3 = this
+# calendar year juvenile (this season's fledgling); 4/5/6 and the two-digit
+# known-exact-hatch-year codes (14, 22, 25, 28, 29, 35, 37...) are all
+# adults (terns can live ~20 years, extending the scale for known-age
+# birds - confirmed with Inbal).
+juvenile_ages <- c(1, 3)
+
+terns <- raw %>%
+  filter(Species %in% c("STEALB", "STEHIR")) %>%
+  mutate(
+    year = year(Date),
+    month = month(Date),
+    ring_id = paste0(trimws(RingPrefix), RingNum),
+    is_new = is.na(Rec) | trimws(Rec) == "",
+    is_adult = !(Age %in% juvenile_ages)
+  )
+
+cat("Total tern records:", nrow(terns), "| distinct individuals (ring_id):", n_distinct(terns$ring_id), "\n")
+```
+
+**Caveat**: `ring_id` (`RingPrefix`+`RingNum`) identifies an individual by
+its physical ring. `r sum(!is.na(raw$RingReplace))` records across the whole
+sheet are flagged `RingReplace` (ring physically replaced) - for those
+individuals, matching by `ring_id` across records breaks at the replacement
+point. Not corrected for here; a source of (probably small) undercount in
+the matching used in the "confirmed breeder" section below.
+
+# Task 1: Spring (pre-breeding) mass
+
+**Hypothesis** (confirmed in a prior session): `hirMASS`/`albMASS` = mean
+`Weight` of new (non-recapture) individuals caught in spring (March-May),
+per species per year.
+
+```{r spring-mass}
+spring_records <- terns %>%
+  filter(is_new, !is.na(Weight), month %in% 3:5)
+
+spring_mass <- spring_records %>%
+  group_by(year, Species) %>%
+  summarise(mean_weight = mean(Weight), sd_weight = sd(Weight), n = n(), .groups = "drop") %>%
+  arrange(Species, year)
+
+kable(spring_mass, digits = 2, caption = "Spring (Mar-May) mean weight, new individuals only, all ages")
+```
+
+## Validation against the known legacy values (2012-2020)
+
+```{r spring-mass-validate}
+legacy1 <- read.csv(file.path(raw_dir, "data1_2012-2020_legacy.csv"))
+known <- legacy1 %>%
+  select(year, hirMASS, albMASS) %>%
+  pivot_longer(c(hirMASS, albMASS), names_to = "species_col", values_to = "reported_mass") %>%
+  mutate(Species = ifelse(species_col == "hirMASS", "STEHIR", "STEALB"))
+
+validation <- known %>%
+  left_join(spring_mass, by = c("year", "Species")) %>%
+  mutate(diff = mean_weight - reported_mass) %>%
+  arrange(Species, year)
+
+kable(validation %>% select(year, Species, reported_mass, computed = mean_weight, n, diff), digits = 2)
+
+spring_cor <- cor(validation$reported_mass, validation$mean_weight, use = "complete.obs")
+spring_mad <- mean(abs(validation$diff), na.rm = TRUE)
+```
+
+Correlation (reported vs. computed): **`r round(spring_cor, 4)`**. Mean
+absolute difference: **`r round(spring_mad, 3)` g**. Confirms the spring
+metric reproduces Yosef's original values almost exactly.
+
+```{r spring-mass-plot}
+ggplot(spring_mass, aes(year, mean_weight, color = Species)) +
+  geom_line() + geom_point(aes(size = n)) +
+  labs(title = "Spring (pre-breeding) mean mass by year", y = "Mean weight (g)", size = "n") +
+  theme_minimal()
+```
+
+# Task 2: Breeding-season (June-July, adults only) mass
+
+**Discovery** (not obvious from the task's wording, confirmed with Inbal
+before implementing): a naive "new individuals caught in June-July" filter
+is dominated by **this-year chicks/juveniles**, since chicks are ringed in
+the nest/shortly after fledging throughout the breeding season - not by
+adults. This must be filtered out or the metric mostly tracks fledgling
+weight, not adult condition.
+
+```{r age-month-evidence}
+age_month_evidence <- terns %>%
+  filter(is_new, month %in% 6:7) %>%
+  count(Species, month, Age) %>%
+  arrange(Species, month, desc(n)) %>%
+  group_by(Species, month) %>%
+  slice_max(n, n = 3) %>%
+  ungroup()
+
+kable(age_month_evidence, caption = "Top age codes by count, new individuals, Jun/Jul (age 1 = pullus, 3 = this-year juvenile - both excluded below)")
+```
+
+```{r breeding-mass}
+breeding_records <- terns %>%
+  filter(is_new, is_adult, !is.na(Weight), month %in% 6:7)
+
+breeding_mass <- breeding_records %>%
+  group_by(year, Species) %>%
+  summarise(mean_weight = mean(Weight), sd_weight = sd(Weight), n = n(), .groups = "drop") %>%
+  arrange(Species, year)
+
+kable(breeding_mass, digits = 2, caption = "Breeding-season (Jun-Jul) mean weight, new ADULT individuals only")
+```
+
+## Comparison: spring vs. breeding-season mass
+
+```{r spring-vs-breeding}
+spring_vs_breeding <- spring_mass %>%
+  rename(spring_mean = mean_weight, spring_n = n) %>%
+  select(year, Species, spring_mean, spring_n) %>%
+  full_join(
+    breeding_mass %>% rename(breeding_mean = mean_weight, breeding_n = n) %>%
+      select(year, Species, breeding_mean, breeding_n),
+    by = c("year", "Species")
+  ) %>%
+  mutate(diff = breeding_mean - spring_mean) %>%
+  arrange(Species, year)
+
+kable(spring_vs_breeding, digits = 2)
+```
+
+```{r spring-vs-breeding-stats, results = "asis"}
+for (sp in c("STEHIR", "STEALB")) {
+  sub <- spring_vs_breeding %>% filter(Species == sp, !is.na(spring_mean), !is.na(breeding_mean))
+  r <- cor(sub$spring_mean, sub$breeding_mean)
+  cat("**", sp, "**: correlation (spring vs. breeding) = ", round(r, 3),
+      ", mean difference (breeding - spring) = ", round(mean(sub$diff), 2), " g\n\n", sep = "")
+}
+```
+
+```{r spring-vs-breeding-plot}
+spring_vs_breeding %>%
+  select(year, Species, spring_mean, breeding_mean) %>%
+  pivot_longer(c(spring_mean, breeding_mean), names_to = "period", values_to = "mean_weight") %>%
+  filter(!is.na(mean_weight)) %>%
+  ggplot(aes(year, mean_weight, color = period)) +
+  geom_line() + geom_point() +
+  facet_wrap(~Species, scales = "free_y") +
+  labs(title = "Spring vs. breeding-season mean mass", y = "Mean weight (g)") +
+  theme_minimal()
+```
+
+Breeding-season adults weigh consistently less than spring arrivals -
+plausibly the cost of incubation/chick-rearing.
+
+# Task 2b: Confirmed-breeder spring mass
+
+**Goal**: refine the spring (pre-breeding) metric to individuals more
+confidently breeding at Atlit that year, rather than passage migrants that
+weighed-in during spring but moved on. Approach: restrict spring-caught
+adults to those whose ring was also recorded (recapture *or* field
+resighting) in June or July of the **same year**.
+
+```{r confirmed-breeder-flag}
+summer_presence <- terns %>%
+  filter(month %in% 6:7) %>%
+  distinct(ring_id, year) %>%
+  mutate(seen_summer = TRUE)
+
+spring_adults <- terns %>%
+  filter(is_new, is_adult, !is.na(Weight), month %in% 3:5) %>%
+  left_join(summer_presence, by = c("ring_id", "year")) %>%
+  mutate(confirmed_breeder = coalesce(seen_summer, FALSE))
+
+kable(spring_adults %>% count(Species, confirmed_breeder),
+      caption = "Spring adults: confirmed (seen again Jun/Jul same year) vs. not")
+```
+
+```{r confirmed-breeder-summary}
+confirmed_summary <- spring_adults %>%
+  group_by(Species, confirmed_breeder) %>%
+  summarise(mean_weight = mean(Weight), sd_weight = sd(Weight), n = n(), .groups = "drop")
+
+kable(confirmed_summary, digits = 2, caption = "Spring weight: confirmed breeders vs. unconfirmed spring adults")
+```
+
+```{r confirmed-breeder-by-year}
+confirmed_by_year <- spring_adults %>%
+  group_by(year, Species, confirmed_breeder) %>%
+  summarise(mean_weight = mean(Weight), n = n(), .groups = "drop")
+
+kable(confirmed_by_year, digits = 2)
+```
+
+```{r confirmed-breeder-plot}
+ggplot(confirmed_by_year, aes(year, mean_weight, color = confirmed_breeder, size = n)) +
+  geom_point() + geom_line(aes(group = confirmed_breeder)) +
+  facet_wrap(~Species, scales = "free_y") +
+  labs(title = "Spring mass: confirmed breeders vs. unconfirmed, by year",
+       y = "Mean weight (g)", color = "Confirmed\nbreeder") +
+  theme_minimal()
+```
+
+## Significance tests
+
+Two comparisons, since the "confirmed breeders" group is a *subset* of "all
+spring individuals" (task 1's cohort, which also includes non-adults and
+unconfirmed adults):
+
+**(a) Confirmed breeders vs. ALL spring individuals** (task 1's full
+cohort, as originally computed - the literal comparison requested):
+
+```{r test-vs-all-spring, results = "asis"}
+for (sp in c("STEHIR", "STEALB")) {
+  confirmed_w <- spring_adults %>% filter(Species == sp, confirmed_breeder) %>% pull(Weight)
+  all_spring_w <- spring_records %>% filter(Species == sp) %>% pull(Weight)
+  tt <- t.test(confirmed_w, all_spring_w)
+  cat("**", sp, "**: confirmed n=", length(confirmed_w), ", mean=", round(mean(confirmed_w), 2),
+      "g; all-spring n=", length(all_spring_w), ", mean=", round(mean(all_spring_w), 2),
+      "g; Welch t-test p=", signif(tt$p.value, 3), "\n\n", sep = "")
+}
+```
+
+**(b) Confirmed vs. unconfirmed spring adults** (non-overlapping groups -
+the cleaner comparison, isolating "stayed" vs. "didn't stay" among adults):
+
+```{r test-vs-unconfirmed, results = "asis"}
+for (sp in c("STEHIR", "STEALB")) {
+  confirmed_w <- spring_adults %>% filter(Species == sp, confirmed_breeder) %>% pull(Weight)
+  unconfirmed_w <- spring_adults %>% filter(Species == sp, !confirmed_breeder) %>% pull(Weight)
+  tt <- t.test(confirmed_w, unconfirmed_w)
+  wt <- wilcox.test(confirmed_w, unconfirmed_w)
+  cat("**", sp, "**: confirmed n=", length(confirmed_w), ", mean=", round(mean(confirmed_w), 2),
+      "g; unconfirmed n=", length(unconfirmed_w), ", mean=", round(mean(unconfirmed_w), 2),
+      "g; Welch t-test p=", signif(tt$p.value, 3),
+      ", Wilcoxon p=", signif(wt$p.value, 3), "\n\n", sep = "")
+}
+```
+
+**(c) Year-controlled robustness check.** Both groups' weights vary by
+year, which could confound a naive pooled comparison if "confirmed"
+records happen to cluster in heavier- or lighter-than-average years. This
+model estimates the confirmed-breeder effect while holding year fixed:
+
+```{r test-year-controlled, results = "asis"}
+for (sp in c("STEHIR", "STEALB")) {
+  d <- spring_adults %>% filter(Species == sp) %>% mutate(year = factor(year))
+  m <- lm(Weight ~ confirmed_breeder + year, data = d)
+  co <- summary(m)$coefficients
+  row <- co[grepl("confirmed_breeder", rownames(co)), , drop = FALSE]
+  cat("**", sp, "** (year-controlled): confirmed-breeder effect = ",
+      round(row[1, "Estimate"], 2), " g (SE ", round(row[1, "Std. Error"], 2),
+      "), p = ", signif(row[1, "Pr(>|t|)"], 3), "\n\n", sep = "")
+}
+```
+
+## Interpretation
+
+Read the three tests together per species rather than any single p-value:
+(a) and (b) tell you the raw pooled-across-years difference; (c) tells you
+whether that difference survives once year-to-year variation is accounted
+for. Small per-year sample sizes (see the per-year table above) mean this
+should be treated as an exploratory signal, not a final result, until
+Yosef/Inbal review sample sizes per group per year.
+
+# Save outputs
+
+```{r save-outputs}
+write.csv(spring_mass, file.path(proc_dir, "spring_mass_by_year_species.csv"), row.names = FALSE)
+write.csv(breeding_mass, file.path(proc_dir, "breeding_mass_by_year_species.csv"), row.names = FALSE)
+write.csv(
+  spring_adults %>% select(ring_id, year, Species, Age, Weight, confirmed_breeder),
+  file.path(proc_dir, "confirmed_breeder_spring_mass.csv"),
+  row.names = FALSE
+)
+
+# ---- Update master_dataset_2010_2026.csv's hirMASS/albMASS columns -----
+# Spring metric remains the single source for hirMASS/albMASS across all
+# years (2011-2026), as established in the prior session - superseding
+# data1.csv's 2012-2020-only values.
+mass_wide <- spring_mass %>%
+  mutate(col = ifelse(Species == "STEHIR", "hirMASS_new", "albMASS_new"),
+         mean_weight = round(mean_weight, 1)) %>%
+  select(year, col, mean_weight) %>%
+  pivot_wider(names_from = col, values_from = mean_weight)
+
+master_path <- file.path(proc_dir, "master_dataset_2010_2026.csv")
+master <- read.csv(master_path) %>%
+  select(-hirMASS, -albMASS) %>%
+  left_join(mass_wide, by = "year") %>%
+  rename(hirMASS = hirMASS_new, albMASS = albMASS_new)
+
+write.csv(master, master_path, row.names = FALSE, na = "NA")
+cat("Updated", master_path, "and wrote 3 CSVs to", proc_dir, "\n")
+```

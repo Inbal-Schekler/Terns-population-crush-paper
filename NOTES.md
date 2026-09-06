@@ -172,10 +172,42 @@ corrected for in any script.
   `master_dataset_2010_2026.csv` - kept as a separate comparison metric per
   task 2's wording ("build a second version").
 
+- Consolidated mass work into a single knittable report,
+  `scripts/02_mass_analysis.Rmd` (renders to `output/02_mass_analysis.html`
+  - requires pandoc; installed via `conda install -c conda-forge pandoc`
+  into the miniconda3 env on this machine, no sudo needed). Deleted the
+  now-superseded `02_reverse_engineer_mass.R` and `03_breeding_mass.R`
+  (and their standalone `.txt` outputs) - same logic, now in the Rmd.
+- Added a third mass metric (follow-up to task 2, Inbal's request):
+  **confirmed-breeder spring mass** - spring-caught adults restricted to
+  those also recorded (recapture or resighting) in June/July of the same
+  year, as stronger evidence they stayed to breed at Atlit rather than
+  passing through. Matched by ring number (`RingPrefix`+`RingNum`); caveat
+  - 1,383 records sheet-wide are flagged `RingReplace`, which breaks this
+  matching for those individuals (not corrected for).
+  Compared against the full spring cohort three ways (Welch t-test,
+  Wilcoxon, and a year-controlled linear model - added because the raw
+  pooled comparison can be confounded by which years happen to have more
+  confirmed-breeder records). Findings:
+  - **Common Tern**: confirmed breeders significantly lighter than the
+    general spring cohort (~4.5g lighter, p<0.001 in all three tests,
+    including year-controlled) - consistent across the raw and
+    year-controlled analyses, i.e. a real effect, not a year artifact.
+  - **Little Tern**: raw pooled comparison NOT significant (p=0.14-0.2),
+    but the year-controlled model finds a significant POSITIVE effect
+    (+1.57g, p=0.02) - i.e. a year confound was masking a real signal in
+    the pooled test. Worth flagging to Yosef/Inbal: which framing (pooled
+    vs. year-controlled) belongs in the paper needs a deliberate decision,
+    not just picking whichever result method comes first.
+
 ### Next session - pick up here
 - Issue #5, remaining tasks 3-4: mass-vs-year correlation per species,
   within-season mass trajectory (and whether it's shifted in the most
   recent year) for breeding individuals specifically.
+- Decide which confirmed-breeder-mass comparison (pooled vs.
+  year-controlled) to feature in the paper, and whether the same
+  confirmed-breeder refinement should also inform which individuals count
+  toward the breeding-season (task 2) metric.
 - Issue #1/#3 still need Yosef's input: weather/predation/Newcastle for
   2021-2026 (no documentation of his original data source found anywhere -
   need to ask him directly), and confirmation of the 2026 Little Tern chick
