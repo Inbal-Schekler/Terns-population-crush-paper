@@ -240,10 +240,32 @@ corrected for in any script.
   master dataset; fixed per Inbal's request. NA where a species/year has
   no confirmed breeders (Little Tern 2024-2025).
 
+- **Issue #5 task 3 done**: `scripts/03_mass_trends.Rmd` (renders to
+  `output/03_mass_trends.html`). Per Inbal's request, extended beyond a
+  single per-species trend to 3 groups per species: **Juvenile** (age 3,
+  Jun-Aug), **Adult breeder** and **Adult non-breeder** (spring weight,
+  task 2c any-year confirmed-breeder split). Individual-level
+  `Weight ~ year` regression per group/species, plus a `Weight ~ year *
+  group` interaction test to check whether the trend itself differs across
+  groups. Striking result: **confirmed breeders show a significantly
+  steeper mass decline than juveniles or non-breeders, in both species**:
+  - Common Tern: breeder slope -0.55 g/year (p=1.6e-06); non-breeder -0.17
+    g/year (p=0.007, much weaker); juvenile -0.11 g/year (p=0.16, not
+    significant). Interaction p=0.0065 - the trends are genuinely
+    different, not just noise.
+  - Little Tern: breeder slope -0.24 g/year (p=0.007); non-breeder -0.11
+    g/year (p=0.13, not significant); juvenile +0.09 g/year (p=0.27, not
+    significant). Interaction p=0.030.
+  This directly touches the paper's core question - breeding adults'
+  body condition is declining over time specifically (not the population
+  broadly), a plausible mechanistic link to the breeding-success collapse.
+  Writes `data_processed/mass_trends_by_group.csv` and
+  `data_processed/mass_trends_stats.csv`.
+
 ### Next session - pick up here
-- Issue #5, remaining tasks 3-4: mass-vs-year correlation per species,
-  within-season mass trajectory (and whether it's shifted in the most
-  recent year) for breeding individuals specifically.
+- Issue #5, remaining task 4: within-season mass trajectory (and whether
+  it's shifted in the most recent year) for breeding individuals
+  specifically.
 - Whether the same confirmed-breeder refinement should also inform which
   individuals count toward the breeding-season (task 2) metric is still
   an open design question.

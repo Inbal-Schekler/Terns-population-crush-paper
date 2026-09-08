@@ -1,0 +1,218 @@
+---
+title: "Terns mass trends over time"
+subtitle: "By age class and breeding status - issue #5 task 3"
+date: "`r format(Sys.Date())`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                       fig.width = 8, fig.height = 5)
+library(readxl)
+library(dplyr)
+library(lubridate)
+library(tidyr)
+library(ggplot2)
+library(knitr)
+```
+
+# Background
+
+Issue #5 task 3 asks whether there's a temporal trend in body condition
+(mass vs. year), per species. Extended per Inbal's request to compare that
+trend across **three groups**, per species:
+
+1. **Juveniles** - this-year fledglings (EURING age 3), representing
+   post-fledging condition.
+2. **Adult breeders** - spring-caught adults confirmed to have stayed to
+   breed (the task 2c / any-year site-fidelity definition from
+   `02_mass_analysis.Rmd`).
+3. **Adult non-breeders** - spring-caught adults with no summer sighting in
+   any year (presumed passage migrants, not confirmed as Atlit breeders).
+
+This checks whether a mass trend (if any) is driven by a specific
+age/breeding-status class, rather than the population as a whole.
+
+# Data loading
+
+```{r load-data}
+raw_dir <- "../data_raw"
+if (!dir.exists(raw_dir)) raw_dir <- "data_raw"
+stopifnot(dir.exists(raw_dir))
+
+proc_dir <- "../data_processed"
+if (!dir.exists(proc_dir)) proc_dir <- "data_processed"
+
+out_dir <- "../output"
+if (!dir.exists(out_dir)) out_dir <- "output"
+
+ringing_path <- file.path(raw_dir, "ringing_data_raw.xlsx")
+stopifnot(file.exists(ringing_path))
+
+col_names_47 <- c(
+  "CR1","RingReplace","Rec","RingPrefix","RingNum","Species","Sex","Age","Wing","Weight",
+  "Date","Time","Place","Lat","Lon","Ringer","Country","Remarks","Net","CR2","Subsp","Tail","Head",
+  "Breeding","CP1","CP2","CP3","CP4","Colour","D","M","OrigDate","OrigCountry","OrigLat","OrigLon","OrigAge",
+  "OldCR1","OldCR2","OldCR3","OldMetal1","OldMetal2","OilHead","OilWings","OilUpperP","OilUnderP","OilLegs","OilSum"
+)
+raw <- read_excel(ringing_path, sheet = "Data", skip = 2, col_names = col_names_47)
+
+terns <- raw %>%
+  filter(Species %in% c("STEALB", "STEHIR")) %>%
+  mutate(
+    year = year(Date),
+    month = month(Date),
+    ring_id = paste0(trimws(RingPrefix), RingNum),
+    is_new = is.na(Rec) | trimws(Rec) == "",
+    species_label = ifelse(Species == "STEHIR", "Common Tern", "Little Tern")
+  )
+```
+
+# Building the three comparison groups
+
+## Juveniles (age 3, Jun-Aug)
+
+Unlike the adult analyses (spring, Mar-May), juveniles can only be
+measured once they're in the nest/newly fledged, i.e. during the breeding
+season. Window is Jun-**Aug** here (wider than the Jun-Jul used for adult
+breeding-season mass in task 2) because juvenile catches remain
+substantial into August (e.g. Common Tern age-3 catches: Jun=106,
+Jul=1442, Aug=1049 - dropping the August tail would discard a large,
+non-trivial share of the juvenile data for no analogous reason to why
+adults were restricted to Jun-Jul).
+
+```{r juvenile-mass}
+juvenile_records <- terns %>%
+  filter(is_new, Age == 3, !is.na(Weight), month %in% 6:8)
+
+juvenile_mass <- juvenile_records %>%
+  group_by(year, Species, species_label) %>%
+  summarise(mean_weight = mean(Weight), sd_weight = sd(Weight), n = n(), .groups = "drop") %>%
+  mutate(group = "Juvenile")
+
+kable(juvenile_mass %>% select(-species_label), digits = 2, caption = "Juvenile (age 3) mean weight, Jun-Aug")
+```
+
+## Adult breeders vs. non-breeders (spring weight, any-year confirmed)
+
+Same construction as task 2c in `02_mass_analysis.Rmd`: any adult (new
+ringing or recapture) weighed in spring (Mar-May), flagged as a confirmed
+breeder if that ring was also recorded (recapture or resighting) in
+June/July of **any** year.
+
+```{r adult-breeder-mass}
+juvenile_ages <- c(1, 3)
+
+summer_ring_ids_anyyear <- terns %>%
+  filter(month %in% 6:7) %>%
+  distinct(ring_id) %>%
+  pull(ring_id)
+
+spring_adults_anyyear <- terns %>%
+  filter(!(Age %in% juvenile_ages), !is.na(Weight), month %in% 3:5) %>%
+  mutate(confirmed_breeder_anyyear = ring_id %in% summer_ring_ids_anyyear)
+
+adult_mass_by_year <- spring_adults_anyyear %>%
+  group_by(year, Species, species_label, confirmed_breeder_anyyear) %>%
+  summarise(mean_weight = mean(Weight), sd_weight = sd(Weight), n = n(), .groups = "drop") %>%
+  mutate(group = ifelse(confirmed_breeder_anyyear, "Adult breeder", "Adult non-breeder")) %>%
+  select(-confirmed_breeder_anyyear)
+
+kable(adult_mass_by_year %>% select(-species_label), digits = 2, caption = "Adult (spring) mean weight, breeders vs. non-breeders")
+```
+
+## Combined
+
+```{r combine-groups}
+combined_by_year <- bind_rows(
+  juvenile_mass,
+  adult_mass_by_year
+) %>%
+  mutate(group = factor(group, levels = c("Juvenile", "Adult non-breeder", "Adult breeder")))
+
+# Individual-level records, for the regression/trend tests below
+combined_records <- bind_rows(
+  juvenile_records %>% mutate(group = "Juvenile"),
+  spring_adults_anyyear %>% mutate(group = ifelse(confirmed_breeder_anyyear, "Adult breeder", "Adult non-breeder"))
+) %>%
+  mutate(group = factor(group, levels = c("Juvenile", "Adult non-breeder", "Adult breeder")))
+```
+
+# Visual comparison
+
+```{r trends-plot}
+ggplot(combined_by_year, aes(year, mean_weight, color = group)) +
+  geom_point(alpha = 0.7) +
+  geom_line(alpha = 0.5) +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", linewidth = 0.6) +
+  facet_wrap(~species_label, scales = "free_y") +
+  labs(title = "Mean mass by year, age class and breeding status",
+       y = "Mean weight (g)", x = "Year", color = "Group") +
+  theme_minimal()
+```
+
+# Trend statistics
+
+Individual-level linear regression of `Weight ~ year`, per species and
+group (not just correlating the per-year means, so each year is weighted
+by its actual sample size):
+
+```{r trend-stats}
+trend_stats <- combined_records %>%
+  group_by(species_label, group) %>%
+  filter(n() >= 3) %>%   # need at least 3 years' worth of individual points to fit a trend
+  group_modify(~ {
+    m <- lm(Weight ~ year, data = .x)
+    s <- summary(m)
+    tibble(
+      n = nrow(.x),
+      n_years = n_distinct(.x$year),
+      slope_g_per_year = round(coef(m)["year"], 3),
+      se = round(s$coefficients["year", "Std. Error"], 3),
+      p_value = signif(s$coefficients["year", "Pr(>|t|)"], 3),
+      r_squared = round(s$r.squared, 3)
+    )
+  }) %>%
+  ungroup()
+
+kable(trend_stats, caption = "Weight ~ year regression, by species and group")
+```
+
+# Does the trend differ between groups?
+
+Interaction test (`Weight ~ year * group`) per species - tests whether the
+year-slope itself differs significantly across juveniles / non-breeders /
+breeders, rather than just looking at each group's trend in isolation:
+
+```{r trend-interaction, results = "asis"}
+for (sp in c("Common Tern", "Little Tern")) {
+  d <- combined_records %>% filter(species_label == sp)
+  m <- lm(Weight ~ year * group, data = d)
+  a <- anova(m)
+  p_interaction <- signif(a["year:group", "Pr(>F)"], 3)
+  cat("**", sp, "**: year x group interaction p =", p_interaction, "\n\n", sep = "")
+}
+```
+
+## Interpretation
+
+A significant interaction means the mass trend over time is not the same
+across groups (e.g. breeders declining while juveniles don't, or vice
+versa) - that's the more informative result for the paper than any single
+group's trend alone. A non-significant interaction means whatever trend
+exists (if any) is roughly parallel across groups. Read this alongside the
+per-group `trend_stats` table above and the plot - small per-year-per-group
+sample sizes (see `n` columns) mean isolated significant/non-significant
+results for any one group should be treated cautiously.
+
+# Save outputs
+
+```{r save-outputs}
+write.csv(combined_by_year %>% select(-species_label), file.path(proc_dir, "mass_trends_by_group.csv"), row.names = FALSE)
+write.csv(trend_stats, file.path(proc_dir, "mass_trends_stats.csv"), row.names = FALSE)
+cat("Wrote data_processed/mass_trends_by_group.csv and mass_trends_stats.csv\n")
+```
