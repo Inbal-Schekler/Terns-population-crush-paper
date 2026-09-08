@@ -168,21 +168,31 @@ combined_records <- bind_rows(
 
 # Visual comparison
 
-One panel per group (not overlaid - too busy with 4 groups x 2 species
-on one plot), species shown by color within each panel, point size
+One fully separate panel per species x group combination (8 total) -
+Common Tern and Little Tern were sharing a y-axis in the same panel
+before, which compressed Little Tern's much smaller/narrower weight range
+(~40-50g vs. Common Tern's ~110-140g) into a sliver at the bottom of each
+plot. Each panel now gets its own independent y-scale. Point size is
 proportional to that year's sample size `n` (small-n years, e.g. Little
 Tern juveniles in the most recent seasons, are visually obvious rather
 than looking like equally-weighted data points):
 
-```{r trends-plot, fig.height=9}
+```{r trends-plot, fig.height=13}
+combined_by_year <- combined_by_year %>%
+  mutate(panel_label = factor(
+    paste(group, species_label, sep = " - "),
+    levels = as.vector(t(outer(levels(group), c("Common Tern", "Little Tern"), paste, sep = " - ")))
+  ))
+
 ggplot(combined_by_year, aes(year, mean_weight, color = species_label)) +
   geom_line(alpha = 0.4, linewidth = 0.5) +
   geom_point(aes(size = n), alpha = 0.7) +
   geom_smooth(method = "lm", se = FALSE, linewidth = 0.8) +
-  facet_wrap(~group, ncol = 2, scales = "free_y") +
+  facet_wrap(~panel_label, ncol = 2, scales = "free_y") +
   scale_size_continuous(range = c(1, 6), name = "n") +
+  guides(color = "none") +
   labs(title = "Mean mass by year, age class and breeding status",
-       y = "Mean weight (g)", x = "Year", color = "Species") +
+       y = "Mean weight (g)", x = "Year") +
   theme_minimal()
 ```
 
