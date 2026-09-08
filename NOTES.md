@@ -211,13 +211,33 @@ corrected for in any script.
     evidently an artifact of the smaller n=40 `is_new`-only sample, not a
     robust signal - superseded, do not cite the old +1.57g/p=0.02 number.
 
+- **Task 2c added (same session, Inbal's request)**: a second version of
+  the confirmed-breeder flag, based on tern site fidelity - a bird
+  recorded in June/July of **any** year (not necessarily the same year as
+  the spring weighing) counts as confirmed, since site-faithful breeders
+  return to the same colony repeatedly. Kept side by side with task 2b
+  (not replacing it) in `scripts/02_mass_analysis.Rmd` pending a decision
+  on which definition to use. Results, same direction as 2b but with a
+  much larger n (site fidelity relaxation roughly triples the confirmed
+  sample):
+  - **Common Tern**: n=490 (vs. 180 in 2b), still ~4.4g lighter,
+    year-controlled p=6.4e-17 - effect gets *more* significant with more
+    data, reinforcing it's real, not a small-sample artifact.
+  - **Little Tern**: n=184 (vs. 86 in 2b), effect stays ~0 (year-controlled
+    +0.11g, p=0.77) - more data did not surface a signal, consistent with
+    Inbal's explanation that relatively few Little Terns pass through
+    Atlit as migrants (i.e. there isn't much of a
+    passing-through-vs-staying contrast to detect for this species in the
+    first place, not a power problem).
+
 ### Next session - pick up here
 - Issue #5, remaining tasks 3-4: mass-vs-year correlation per species,
   within-season mass trajectory (and whether it's shifted in the most
   recent year) for breeding individuals specifically.
-- Common Tern's confirmed-breeder-lighter finding (~4.5g, robust across
-  cohort definitions) is solid enough to discuss with Yosef; Little Tern's
-  is not (no significant effect once recaptures are correctly included).
+- Decide which confirmed-breeder definition (2b same-year vs. 2c any-year
+  site-fidelity) to use going forward - Inbal is weighing both, not yet
+  decided. Common Tern's confirmed-breeder-lighter finding is robust under
+  both; Little Tern shows no effect under either.
 - Whether the same confirmed-breeder refinement should also inform which
   individuals count toward the breeding-season (task 2) metric is still
   an open design question.

@@ -401,13 +401,123 @@ for. Small per-year sample sizes (see the per-year table above) mean this
 should be treated as an exploratory signal, not a final result, until
 Yosef/Inbal review sample sizes per group per year.
 
+# Task 2c: Confirmed-breeder spring mass - any-year site fidelity
+
+**Rationale** (Inbal): terns are typically site-faithful, returning to the
+same colony year after year. Task 2b requires the summer sighting to fall
+in the *same year* as the spring capture. This version relaxes that: a
+bird recorded in June/July of **any** year (not necessarily the same year
+as the spring weighing) is taken as evidence it's a colony-associated
+breeder, and its spring weight - from whichever year it was caught in
+spring - counts as a "confirmed breeder" data point. This should recover a
+larger confirmed sample than the same-year version, at the cost of a
+looser link between the specific spring weight and evidence of breeding
+*that particular* year (e.g. a bird could be flagged confirmed based on a
+summer sighting a decade after or before the spring weight was recorded).
+Kept side by side with task 2b rather than replacing it, to compare before
+deciding which definition to use.
+
+```{r confirmed-breeder-anyyear-flag}
+summer_ring_ids_anyyear <- terns %>%
+  filter(month %in% 6:7) %>%
+  distinct(ring_id) %>%
+  pull(ring_id)
+
+spring_adults_anyyear <- spring_adults %>%
+  mutate(confirmed_breeder_anyyear = ring_id %in% summer_ring_ids_anyyear)
+
+kable(spring_adults_anyyear %>% count(Species, confirmed_breeder_anyyear),
+      caption = "Spring adults: confirmed via a summer sighting in ANY year vs. never recorded in summer")
+```
+
+```{r confirmed-breeder-anyyear-summary}
+confirmed_summary_anyyear <- spring_adults_anyyear %>%
+  group_by(Species, confirmed_breeder_anyyear) %>%
+  summarise(mean_weight = mean(Weight), sd_weight = sd(Weight), n = n(), .groups = "drop")
+
+kable(confirmed_summary_anyyear, digits = 2,
+      caption = "Spring weight: any-year confirmed breeders vs. never recorded in summer")
+```
+
+```{r confirmed-breeder-anyyear-by-year}
+confirmed_by_year_anyyear <- spring_adults_anyyear %>%
+  group_by(year, Species, confirmed_breeder_anyyear) %>%
+  summarise(mean_weight = mean(Weight), n = n(), .groups = "drop")
+
+kable(confirmed_by_year_anyyear, digits = 2)
+```
+
+```{r confirmed-breeder-anyyear-plot}
+ggplot(confirmed_by_year_anyyear, aes(year, mean_weight, color = confirmed_breeder_anyyear, size = n)) +
+  geom_point() + geom_line(aes(group = confirmed_breeder_anyyear)) +
+  facet_wrap(~Species, scales = "free_y") +
+  labs(title = "Spring mass: any-year confirmed breeders vs. never recorded in summer",
+       y = "Mean weight (g)", color = "Confirmed\nbreeder\n(any year)") +
+  theme_minimal()
+```
+
+## Significance tests (any-year version)
+
+Same three-test structure as task 2b, substituting the any-year flag:
+
+```{r test-anyyear-vs-all-spring, results = "asis"}
+for (sp in c("STEHIR", "STEALB")) {
+  confirmed_w <- spring_adults_anyyear %>% filter(Species == sp, confirmed_breeder_anyyear) %>% pull(Weight)
+  all_spring_w <- spring_records %>% filter(Species == sp) %>% pull(Weight)
+  tt <- t.test(confirmed_w, all_spring_w)
+  cat("**", sp, "**: confirmed (any-year) n=", length(confirmed_w), ", mean=", round(mean(confirmed_w), 2),
+      "g; all-spring (Yosef's parameter) n=", length(all_spring_w), ", mean=", round(mean(all_spring_w), 2),
+      "g; Welch t-test p=", signif(tt$p.value, 3), "\n\n", sep = "")
+}
+```
+
+```{r test-anyyear-vs-unconfirmed, results = "asis"}
+for (sp in c("STEHIR", "STEALB")) {
+  confirmed_w <- spring_adults_anyyear %>% filter(Species == sp, confirmed_breeder_anyyear) %>% pull(Weight)
+  unconfirmed_w <- spring_adults_anyyear %>% filter(Species == sp, !confirmed_breeder_anyyear) %>% pull(Weight)
+  tt <- t.test(confirmed_w, unconfirmed_w)
+  wt <- wilcox.test(confirmed_w, unconfirmed_w)
+  cat("**", sp, "**: confirmed (any-year) n=", length(confirmed_w), ", mean=", round(mean(confirmed_w), 2),
+      "g; never-seen-in-summer n=", length(unconfirmed_w), ", mean=", round(mean(unconfirmed_w), 2),
+      "g; Welch t-test p=", signif(tt$p.value, 3),
+      ", Wilcoxon p=", signif(wt$p.value, 3), "\n\n", sep = "")
+}
+```
+
+```{r test-anyyear-year-controlled, results = "asis"}
+for (sp in c("STEHIR", "STEALB")) {
+  d <- spring_adults_anyyear %>% filter(Species == sp) %>% mutate(year = factor(year))
+  m <- lm(Weight ~ confirmed_breeder_anyyear + year, data = d)
+  co <- summary(m)$coefficients
+  row <- co[grepl("confirmed_breeder_anyyear", rownames(co)), , drop = FALSE]
+  cat("**", sp, "** (year-controlled): confirmed-breeder(any-year) effect = ",
+      round(row[1, "Estimate"], 2), " g (SE ", round(row[1, "Std. Error"], 2),
+      "), p = ", signif(row[1, "Pr(>|t|)"], 3), "\n\n", sep = "")
+}
+```
+
+## Same-year (2b) vs. any-year (2c) comparison
+
+```{r compare-2b-2c}
+compare_2b_2c <- bind_rows(
+  spring_adults %>% mutate(definition = "same-year (2b)") %>% rename(confirmed = confirmed_breeder),
+  spring_adults_anyyear %>% mutate(definition = "any-year (2c)") %>% rename(confirmed = confirmed_breeder_anyyear)
+) %>%
+  filter(confirmed) %>%
+  group_by(Species, definition) %>%
+  summarise(mean_weight = mean(Weight), sd_weight = sd(Weight), n = n(), .groups = "drop")
+
+kable(compare_2b_2c, digits = 2, caption = "Confirmed-breeder group only: same-year vs. any-year definition")
+```
+
 # Save outputs
 
 ```{r save-outputs}
 write.csv(spring_mass, file.path(proc_dir, "spring_mass_by_year_species.csv"), row.names = FALSE)
 write.csv(breeding_mass, file.path(proc_dir, "breeding_mass_by_year_species.csv"), row.names = FALSE)
 write.csv(
-  spring_adults %>% select(ring_id, year, Species, Age, Weight, is_new, confirmed_breeder),
+  spring_adults_anyyear %>%
+    select(ring_id, year, Species, Age, Weight, is_new, confirmed_breeder, confirmed_breeder_anyyear),
   file.path(proc_dir, "confirmed_breeder_spring_mass.csv"),
   row.names = FALSE
 )
