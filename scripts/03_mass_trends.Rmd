@@ -175,19 +175,34 @@ before, which compressed Little Tern's much smaller/narrower weight range
 plot. Each panel now gets its own independent y-scale. Point size is
 proportional to that year's sample size `n` (small-n years, e.g. Little
 Tern juveniles in the most recent seasons, are visually obvious rather
-than looking like equally-weighted data points):
+than looking like equally-weighted data points).
+
+**Trend line fix**: the smooth/trend line is now fit on the same
+individual-level data as the `trend_stats` table below, NOT on the
+per-year mean points shown in the plot. Fitting on the yearly means (as
+before) treats every year equally regardless of how many individuals it's
+based on - a thin year (e.g. Little Tern all-adults 2024, n=1) gets the
+same say as a year with 80+ individuals. That mismatch was visible for
+Little Tern all-adults: the table's individual-level slope is -0.16
+g/year, but a couple of small-n, high-mean recent years (2024 n=1,
+2026 n=10) were pulling the year-mean-based line to apparently *positive*
+in the plot. Fitting the smooth on individual records instead makes the
+line match the table:
 
 ```{r trends-plot, fig.height=13}
+panel_levels <- as.vector(t(outer(levels(combined_by_year$group), c("Common Tern", "Little Tern"), paste, sep = " - ")))
+
 combined_by_year <- combined_by_year %>%
-  mutate(panel_label = factor(
-    paste(group, species_label, sep = " - "),
-    levels = as.vector(t(outer(levels(group), c("Common Tern", "Little Tern"), paste, sep = " - ")))
-  ))
+  mutate(panel_label = factor(paste(group, species_label, sep = " - "), levels = panel_levels))
+
+combined_records_panel <- combined_records %>%
+  mutate(panel_label = factor(paste(group, species_label, sep = " - "), levels = panel_levels))
 
 ggplot(combined_by_year, aes(year, mean_weight, color = species_label)) +
   geom_line(alpha = 0.4, linewidth = 0.5) +
   geom_point(aes(size = n), alpha = 0.7) +
-  geom_smooth(method = "lm", se = FALSE, linewidth = 0.8) +
+  geom_smooth(data = combined_records_panel, aes(x = year, y = Weight, color = species_label),
+              method = "lm", se = FALSE, linewidth = 0.8) +
   facet_wrap(~panel_label, ncol = 2, scales = "free_y") +
   scale_size_continuous(range = c(1, 6), name = "n") +
   guides(color = "none") +
