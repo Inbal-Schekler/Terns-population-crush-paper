@@ -2681,13 +2681,16 @@ Fitting the smooth on individual records instead makes the line match
 the table:</p>
 <pre class="r"><code>panel_levels &lt;- as.vector(t(outer(levels(combined_by_year$group), c(&quot;Common Tern&quot;, &quot;Little Tern&quot;), paste, sep = &quot; - &quot;)))
 
-combined_by_year &lt;- combined_by_year %&gt;%
+# Local copies with a plotting-only panel_label column - deliberately not
+# reassigned back to combined_by_year/combined_records, so this doesn&#39;t
+# leak into the CSVs written out in # Save outputs below.
+combined_by_year_panel &lt;- combined_by_year %&gt;%
   mutate(panel_label = factor(paste(group, species_label, sep = &quot; - &quot;), levels = panel_levels))
 
 combined_records_panel &lt;- combined_records %&gt;%
   mutate(panel_label = factor(paste(group, species_label, sep = &quot; - &quot;), levels = panel_levels))
 
-ggplot(combined_by_year, aes(year, mean_weight, color = species_label)) +
+ggplot(combined_by_year_panel, aes(year, mean_weight, color = species_label)) +
   geom_line(alpha = 0.4, linewidth = 0.5) +
   geom_point(aes(size = n), alpha = 0.7) +
   geom_smooth(data = combined_records_panel, aes(x = year, y = Weight, color = species_label),
