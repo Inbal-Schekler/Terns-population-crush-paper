@@ -200,12 +200,57 @@ spring_vs_breeding <- spring_mass %>%
 kable(spring_vs_breeding, digits = 2)
 ```
 
+### Year-level pattern
+
 ```{r spring-vs-breeding-stats, results = "asis"}
 for (sp in c("STEHIR", "STEALB")) {
   sub <- spring_vs_breeding %>% filter(Species == sp, !is.na(spring_mean), !is.na(breeding_mean))
   r <- cor(sub$spring_mean, sub$breeding_mean)
   cat("**", sp, "**: correlation (spring vs. breeding) = ", round(r, 3),
       ", mean difference (breeding - spring) = ", round(mean(sub$diff), 2), " g\n\n", sep = "")
+}
+```
+
+### Significance test (individual-level)
+
+The year-level correlation/difference above summarises the *pattern*
+across years, but doesn't test whether spring and breeding-season weights
+actually differ. `spring_records` and `breeding_records` are built from
+disjoint ringing events (a bird's first-ever ringing record can only be
+"new" once - see `is_new` in the Data loading section), so these are
+independent samples of individuals, suitable for a two-sample test:
+
+```{r spring-vs-breeding-test, results = "asis"}
+for (sp in c("STEHIR", "STEALB")) {
+  spring_w <- spring_records %>% filter(Species == sp) %>% pull(Weight)
+  breeding_w <- breeding_records %>% filter(Species == sp) %>% pull(Weight)
+  tt <- t.test(spring_w, breeding_w)
+  wt <- wilcox.test(spring_w, breeding_w)
+  cat("**", sp, "**: spring n=", length(spring_w), ", mean=", round(mean(spring_w), 2),
+      "g; breeding n=", length(breeding_w), ", mean=", round(mean(breeding_w), 2),
+      "g; Welch t-test p=", signif(tt$p.value, 3),
+      ", Wilcoxon p=", signif(wt$p.value, 3), "\n\n", sep = "")
+}
+```
+
+**Year-controlled robustness check** - as in task 2b, a pooled comparison
+across years can be confounded if spring/breeding records happen to
+cluster in different years. This model holds year fixed while estimating
+the breeding-vs-spring effect:
+
+```{r spring-vs-breeding-test-year-controlled, results = "asis"}
+for (sp in c("STEHIR", "STEALB")) {
+  d <- bind_rows(
+    spring_records %>% filter(Species == sp) %>% mutate(period = "spring"),
+    breeding_records %>% filter(Species == sp) %>% mutate(period = "breeding")
+  ) %>%
+    mutate(year = factor(year), period = factor(period, levels = c("spring", "breeding")))
+  m <- lm(Weight ~ period + year, data = d)
+  co <- summary(m)$coefficients
+  row <- co[grepl("^period", rownames(co)), , drop = FALSE]
+  cat("**", sp, "** (year-controlled): breeding-vs-spring effect = ",
+      round(row[1, "Estimate"], 2), " g (SE ", round(row[1, "Std. Error"], 2),
+      "), p = ", signif(row[1, "Pr(>|t|)"], 3), "\n\n", sep = "")
 }
 ```
 
@@ -226,11 +271,18 @@ plausibly the cost of incubation/chick-rearing.
 
 # Task 2b: Confirmed-breeder spring mass
 
-**Goal**: refine the spring (pre-breeding) metric to individuals more
-confidently breeding at Atlit that year, rather than passage migrants that
-weighed-in during spring but moved on. Approach: restrict spring-caught
-adults to those whose ring was also recorded (recapture *or* field
-resighting) in June or July of the **same year**.
+**Goal**: check whether Yosef's original spring mass parameter (task 1 -
+mean weight of **all** spring-caught adults, new ringings only) differs
+from the weight of the subset we're more confident actually bred at
+Atlit that year. Approach: take **any** adult weighed in spring - a new
+ringing *or* an in-hand recapture, doesn't matter which, just that it was
+caught and weighed in March-May - and flag it as a confirmed breeder if
+that same ring was also recorded (recapture *or* field resighting,
+weighed or not) in June or July of the **same year**.
+
+This deliberately does NOT filter to `is_new` (unlike task 1's spring
+metric) - a recaptured adult weighed again in spring is just as valid a
+spring-weight data point as a newly-ringed one for this comparison.
 
 ```{r confirmed-breeder-flag}
 summer_presence <- terns %>%
@@ -239,13 +291,23 @@ summer_presence <- terns %>%
   mutate(seen_summer = TRUE)
 
 spring_adults <- terns %>%
-  filter(is_new, is_adult, !is.na(Weight), month %in% 3:5) %>%
+  filter(is_adult, !is.na(Weight), month %in% 3:5) %>%
   left_join(summer_presence, by = c("ring_id", "year")) %>%
   mutate(confirmed_breeder = coalesce(seen_summer, FALSE))
 
 kable(spring_adults %>% count(Species, confirmed_breeder),
-      caption = "Spring adults: confirmed (seen again Jun/Jul same year) vs. not")
+      caption = "Spring adults (new + recaptures): confirmed (seen again Jun/Jul same year) vs. not")
+
+kable(spring_adults %>% count(Species, confirmed_breeder, is_new) %>%
+        mutate(is_new = ifelse(is_new, "new ringing", "recapture")),
+      caption = "Same breakdown, split by whether the spring record itself was a new ringing or a recapture")
 ```
+
+**Caveat**: since recaptures are now included, the same individual can
+appear more than once in `spring_adults` if it was caught and weighed in
+spring in more than one year - a mild violation of independence in the
+pooled tests below (not corrected for, on top of the existing
+`RingReplace` caveat noted in Data loading).
 
 ```{r confirmed-breeder-summary}
 confirmed_summary <- spring_adults %>%
@@ -274,12 +336,17 @@ ggplot(confirmed_by_year, aes(year, mean_weight, color = confirmed_breeder, size
 
 ## Significance tests
 
-Two comparisons, since the "confirmed breeders" group is a *subset* of "all
-spring individuals" (task 1's cohort, which also includes non-adults and
-unconfirmed adults):
+Two comparisons. Note "confirmed breeders" is no longer a strict subset of
+task 1's "all spring individuals" cohort - task 1 is `is_new`-only (that's
+how it reproduces Yosef's `hirMASS`/`albMASS`), while confirmed breeders
+here can include recaptured adults too. So (a) compares confirmed breeders
+against Yosef's original spring parameter as defined, and (b) is the
+cleaner apples-to-apples split within the broader (new+recapture) spring
+adult cohort built here:
 
-**(a) Confirmed breeders vs. ALL spring individuals** (task 1's full
-cohort, as originally computed - the literal comparison requested):
+**(a) Confirmed breeders vs. Yosef's original spring parameter** (task 1's
+`is_new`-only cohort, as originally computed - checks whether the
+breeder-confirmed subset differs from the parameter as Yosef defined it):
 
 ```{r test-vs-all-spring, results = "asis"}
 for (sp in c("STEHIR", "STEALB")) {
@@ -340,7 +407,7 @@ Yosef/Inbal review sample sizes per group per year.
 write.csv(spring_mass, file.path(proc_dir, "spring_mass_by_year_species.csv"), row.names = FALSE)
 write.csv(breeding_mass, file.path(proc_dir, "breeding_mass_by_year_species.csv"), row.names = FALSE)
 write.csv(
-  spring_adults %>% select(ring_id, year, Species, Age, Weight, confirmed_breeder),
+  spring_adults %>% select(ring_id, year, Species, Age, Weight, is_new, confirmed_breeder),
   file.path(proc_dir, "confirmed_breeder_spring_mass.csv"),
   row.names = FALSE
 )

@@ -188,26 +188,39 @@ corrected for in any script.
   Compared against the full spring cohort three ways (Welch t-test,
   Wilcoxon, and a year-controlled linear model - added because the raw
   pooled comparison can be confounded by which years happen to have more
-  confirmed-breeder records). Findings:
-  - **Common Tern**: confirmed breeders significantly lighter than the
-    general spring cohort (~4.5g lighter, p<0.001 in all three tests,
-    including year-controlled) - consistent across the raw and
-    year-controlled analyses, i.e. a real effect, not a year artifact.
-  - **Little Tern**: raw pooled comparison NOT significant (p=0.14-0.2),
-    but the year-controlled model finds a significant POSITIVE effect
-    (+1.57g, p=0.02) - i.e. a year confound was masking a real signal in
-    the pooled test. Worth flagging to Yosef/Inbal: which framing (pooled
-    vs. year-controlled) belongs in the paper needs a deliberate decision,
-    not just picking whichever result method comes first.
+  confirmed-breeder records).
+
+  **Revised (same session, per Inbal)**: the spring side of this metric
+  originally reused task 1's `is_new`-only filter, so it only caught
+  individuals ringed for the first time that spring. Changed to include
+  **any** adult weighed in spring - new ringing or in-hand recapture -
+  since Yosef's own parameter is about spring weight generally, not about
+  first-time ringings specifically. Confirmed-breeder counts grew
+  accordingly (Common Tern 113->180, Little Tern 40->86 - recaptured
+  spring birds are more likely to also be seen again in summer, which
+  makes sense for site-faithful local breeders). Findings with the
+  corrected cohort:
+  - **Common Tern**: confirmed breeders (n=180) still significantly
+    lighter than Yosef's spring parameter / the general spring cohort
+    (~4.5g lighter, p<0.001 in all three tests including year-controlled)
+    - stable finding, unaffected by the recapture-inclusion fix.
+  - **Little Tern**: confirmed breeders (n=86) show NO significant
+    difference in any of the three tests (p=0.32-0.62, year-controlled
+    effect shrank from +1.57g/p=0.02 to +0.48g/p=0.33). The earlier
+    "significant year-controlled effect" reported before this fix was
+    evidently an artifact of the smaller n=40 `is_new`-only sample, not a
+    robust signal - superseded, do not cite the old +1.57g/p=0.02 number.
 
 ### Next session - pick up here
 - Issue #5, remaining tasks 3-4: mass-vs-year correlation per species,
   within-season mass trajectory (and whether it's shifted in the most
   recent year) for breeding individuals specifically.
-- Decide which confirmed-breeder-mass comparison (pooled vs.
-  year-controlled) to feature in the paper, and whether the same
-  confirmed-breeder refinement should also inform which individuals count
-  toward the breeding-season (task 2) metric.
+- Common Tern's confirmed-breeder-lighter finding (~4.5g, robust across
+  cohort definitions) is solid enough to discuss with Yosef; Little Tern's
+  is not (no significant effect once recaptures are correctly included).
+- Whether the same confirmed-breeder refinement should also inform which
+  individuals count toward the breeding-season (task 2) metric is still
+  an open design question.
 - Issue #1/#3 still need Yosef's input: weather/predation/Newcastle for
   2021-2026 (no documentation of his original data source found anywhere -
   need to ask him directly), and confirmation of the 2026 Little Tern chick

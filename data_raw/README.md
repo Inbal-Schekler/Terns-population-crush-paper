@@ -381,14 +381,21 @@ Summary of what it contains and found:
   arrivals (Common Tern ~7.8g lower, decoupled from spring value
   year-to-year, r=-0.03; Little Tern ~2.3g lower, more correlated with
   spring, r=0.57) - consistent with incubation/chick-rearing costs.
-- **Confirmed-breeder spring mass** (follow-up, Inbal's request): spring
-  adults further restricted to those also recorded (recapture or
-  resighting, matched by `RingPrefix`+`RingNum`) in June/July of the same
-  year - stronger evidence they stayed to breed. Caveat: 1,383 records
-  sheet-wide are flagged `RingReplace` (physical ring changed), which
-  breaks this ring-number matching for those individuals. Result: Common
-  Tern confirmed breeders significantly lighter than the general spring
-  cohort (~4.5g, p<0.001, holds after controlling for year); Little Tern
-  shows no raw difference (p=0.14-0.2) but a significant POSITIVE effect
-  once year is controlled for (+1.57g, p=0.02) - a year confound was
-  masking the signal in the pooled test.
+- **Confirmed-breeder spring mass** (follow-up, Inbal's request): any
+  adult weighed in spring (new ringing OR in-hand recapture - not just
+  first-time ringings, since Yosef's own spring parameter isn't restricted
+  that way either) further flagged as a confirmed breeder if that ring was
+  also recorded (recapture or resighting) in June/July of the same year -
+  stronger evidence it stayed to breed. Matched by `RingPrefix`+`RingNum`.
+  Caveat: 1,383 records sheet-wide are flagged `RingReplace` (physical ring
+  changed), which breaks this matching for those individuals; also, since
+  recaptures are included, the same individual can appear in more than one
+  year's cohort (mild non-independence in the pooled tests). Result:
+  **Common Tern** confirmed breeders (n=180) significantly lighter than
+  Yosef's spring parameter / the general spring cohort (~4.5g, p<0.001,
+  holds after controlling for year) - stable finding. **Little Tern**
+  (n=86) shows NO significant difference in any test (p=0.32-0.62) - an
+  earlier run that only counted first-time-ringed spring adults (n=40)
+  had found a significant year-controlled effect (+1.57g, p=0.02), but
+  that turned out to be a small-sample artifact once recaptures were
+  correctly included - superseded, don't cite the old number.
