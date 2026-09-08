@@ -261,6 +261,14 @@ corrected for in any script.
   broadly), a plausible mechanistic link to the breeding-success collapse.
   Writes `data_processed/mass_trends_by_group.csv` and
   `data_processed/mass_trends_stats.csv`.
+  - **Added same session**: a 4th group, **All adults (unsplit)** - the
+    plain version of task 3 (spring adults, no breeder/non-breeder split),
+    shown alongside the other 3 for reference but excluded from the
+    interaction test (not a mutually-exclusive category vs. the split
+    groups). Illustrates why the split matters: Common Tern's unsplit
+    trend is -0.27 g/year (p=3.1e-06) - masks the much steeper -0.55
+    g/year breeder-only decline. Little Tern unsplit: -0.16 g/year
+    (p=0.0036).
 
 ### Next session - pick up here
 - Issue #5, remaining task 4: within-season mass trajectory (and whether

@@ -125,33 +125,59 @@ adult_mass_by_year <- spring_adults_anyyear %>%
 kable(adult_mass_by_year %>% select(-species_label), digits = 2, caption = "Adult (spring) mean weight, breeders vs. non-breeders")
 ```
 
+## All adults (unsplit)
+
+The plain version of task 3's original ask - all spring-caught adults
+together, no breeder/non-breeder split. Kept as a reference point: this is
+just breeders + non-breeders combined, so it's shown alongside the split
+groups in the plot and the trend-statistics table below, but it's
+deliberately **excluded from the interaction test** (it's not a
+mutually-exclusive category vs. the other three - including it there would
+just be comparing a group against its own subsets).
+
+```{r adult-all-mass}
+all_adults_mass <- spring_adults_anyyear %>%
+  group_by(year, Species, species_label) %>%
+  summarise(mean_weight = mean(Weight), sd_weight = sd(Weight), n = n(), .groups = "drop") %>%
+  mutate(group = "All adults (unsplit)")
+
+kable(all_adults_mass %>% select(-species_label), digits = 2, caption = "Adult (spring) mean weight, breeders + non-breeders combined")
+```
+
 ## Combined
 
 ```{r combine-groups}
 combined_by_year <- bind_rows(
   juvenile_mass,
-  adult_mass_by_year
+  adult_mass_by_year,
+  all_adults_mass
 ) %>%
-  mutate(group = factor(group, levels = c("Juvenile", "Adult non-breeder", "Adult breeder")))
+  mutate(group = factor(group, levels = c("Juvenile", "Adult non-breeder", "Adult breeder", "All adults (unsplit)")))
 
-# Individual-level records, for the regression/trend tests below
+# Individual-level records, for the regression/trend tests below.
+# "All adults (unsplit)" duplicates rows already in Adult breeder/non-breeder
+# by construction - fine for the per-group trend_stats table, but must be
+# excluded from the interaction test (see note above).
 combined_records <- bind_rows(
   juvenile_records %>% mutate(group = "Juvenile"),
-  spring_adults_anyyear %>% mutate(group = ifelse(confirmed_breeder_anyyear, "Adult breeder", "Adult non-breeder"))
+  spring_adults_anyyear %>% mutate(group = ifelse(confirmed_breeder_anyyear, "Adult breeder", "Adult non-breeder")),
+  spring_adults_anyyear %>% mutate(group = "All adults (unsplit)")
 ) %>%
-  mutate(group = factor(group, levels = c("Juvenile", "Adult non-breeder", "Adult breeder")))
+  mutate(group = factor(group, levels = c("Juvenile", "Adult non-breeder", "Adult breeder", "All adults (unsplit)")))
 ```
 
 # Visual comparison
 
 ```{r trends-plot}
-ggplot(combined_by_year, aes(year, mean_weight, color = group)) +
+ggplot(combined_by_year, aes(year, mean_weight, color = group, linetype = group)) +
   geom_point(alpha = 0.7) +
   geom_line(alpha = 0.5) +
-  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", linewidth = 0.6) +
+  geom_smooth(method = "lm", se = FALSE, linewidth = 0.6) +
+  scale_linetype_manual(values = c("Juvenile" = "solid", "Adult non-breeder" = "solid",
+                                    "Adult breeder" = "solid", "All adults (unsplit)" = "dotted")) +
   facet_wrap(~species_label, scales = "free_y") +
   labs(title = "Mean mass by year, age class and breeding status",
-       y = "Mean weight (g)", x = "Year", color = "Group") +
+       y = "Mean weight (g)", x = "Year", color = "Group", linetype = "Group") +
   theme_minimal()
 ```
 
@@ -190,7 +216,9 @@ breeders, rather than just looking at each group's trend in isolation:
 
 ```{r trend-interaction, results = "asis"}
 for (sp in c("Common Tern", "Little Tern")) {
-  d <- combined_records %>% filter(species_label == sp)
+  d <- combined_records %>%
+    filter(species_label == sp, group != "All adults (unsplit)") %>%
+    droplevels()
   m <- lm(Weight ~ year * group, data = d)
   a <- anova(m)
   p_interaction <- signif(a["year:group", "Pr(>F)"], 3)
