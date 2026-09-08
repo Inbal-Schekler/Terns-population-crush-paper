@@ -168,16 +168,21 @@ combined_records <- bind_rows(
 
 # Visual comparison
 
-```{r trends-plot}
-ggplot(combined_by_year, aes(year, mean_weight, color = group, linetype = group)) +
-  geom_point(alpha = 0.7) +
-  geom_line(alpha = 0.5) +
-  geom_smooth(method = "lm", se = FALSE, linewidth = 0.6) +
-  scale_linetype_manual(values = c("Juvenile" = "solid", "Adult non-breeder" = "solid",
-                                    "Adult breeder" = "solid", "All adults (unsplit)" = "dotted")) +
-  facet_wrap(~species_label, scales = "free_y") +
+One panel per group (not overlaid - too busy with 4 groups x 2 species
+on one plot), species shown by color within each panel, point size
+proportional to that year's sample size `n` (small-n years, e.g. Little
+Tern juveniles in the most recent seasons, are visually obvious rather
+than looking like equally-weighted data points):
+
+```{r trends-plot, fig.height=9}
+ggplot(combined_by_year, aes(year, mean_weight, color = species_label)) +
+  geom_line(alpha = 0.4, linewidth = 0.5) +
+  geom_point(aes(size = n), alpha = 0.7) +
+  geom_smooth(method = "lm", se = FALSE, linewidth = 0.8) +
+  facet_wrap(~group, ncol = 2, scales = "free_y") +
+  scale_size_continuous(range = c(1, 6), name = "n") +
   labs(title = "Mean mass by year, age class and breeding status",
-       y = "Mean weight (g)", x = "Year", color = "Group", linetype = "Group") +
+       y = "Mean weight (g)", x = "Year", color = "Species") +
   theme_minimal()
 ```
 
@@ -205,7 +210,21 @@ trend_stats <- combined_records %>%
   }) %>%
   ungroup()
 
-kable(trend_stats, caption = "Weight ~ year regression, by species and group")
+# p < 0.001 shown in scientific notation (still 3 sig figs); p >= 0.001
+# shown as a plain decimal - kable's default column-wide formatting was
+# rendering EVERY value in the column in scientific notation (e.g.
+# "1.56e-01") just because the smallest value in the column needed it.
+format_pval <- function(p) {
+  ifelse(p < 0.001, formatC(p, format = "e", digits = 2), formatC(p, format = "f", digits = 3))
+}
+
+trend_stats_display <- trend_stats %>%
+  mutate(significant = p_value < 0.05, p_value = format_pval(p_value)) %>%
+  mutate(across(-significant, ~ ifelse(significant, paste0("<strong>", .x, "</strong>"), as.character(.x)))) %>%
+  select(-significant)
+
+kable(trend_stats_display, escape = FALSE,
+      caption = "Weight ~ year regression, by species and group (significant rows, p&lt;0.05, in bold)")
 ```
 
 # Does the trend differ between groups?
