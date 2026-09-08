@@ -1,0 +1,254 @@
+---
+title: "Within-season mass trajectory for breeding individuals"
+subtitle: "issue #5 task 4"
+date: "`r format(Sys.Date())`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                       fig.width = 8, fig.height = 5)
+library(readxl)
+library(dplyr)
+library(lubridate)
+library(tidyr)
+library(ggplot2)
+library(knitr)
+```
+
+# Background
+
+Issue #5 task 4: for birds identified as breeding (task 2), how does mass
+change over the course of the breeding season (early vs. late - the cost
+of incubation/chick-rearing), and has that within-season trajectory
+shifted in recent years?
+
+Scoped per Inbal (2026-09-08):
+
+- **Little Tern**: task 3 found no significant mass-vs-year trend for this
+  species in any group (juvenile/breeder/non-breeder/unsplit) - so no need
+  to split the within-season analysis by year here. Just check whether
+  there's a within-season pattern at all (pooled across all years).
+- **Common Tern**: check the within-season pattern *and* whether it
+  differs by year - motivated by a field observation this year (terns
+  seen bringing fish they couldn't eat, not observed in previous years) -
+  a possible food-availability signal that might show up as an unusual
+  within-season mass trajectory in the most recent year specifically.
+
+# Data loading
+
+```{r load-data}
+raw_dir <- "../data_raw"
+if (!dir.exists(raw_dir)) raw_dir <- "data_raw"
+stopifnot(dir.exists(raw_dir))
+
+proc_dir <- "../data_processed"
+if (!dir.exists(proc_dir)) proc_dir <- "data_processed"
+
+ringing_path <- file.path(raw_dir, "ringing_data_raw.xlsx")
+stopifnot(file.exists(ringing_path))
+
+col_names_47 <- c(
+  "CR1","RingReplace","Rec","RingPrefix","RingNum","Species","Sex","Age","Wing","Weight",
+  "Date","Time","Place","Lat","Lon","Ringer","Country","Remarks","Net","CR2","Subsp","Tail","Head",
+  "Breeding","CP1","CP2","CP3","CP4","Colour","D","M","OrigDate","OrigCountry","OrigLat","OrigLon","OrigAge",
+  "OldCR1","OldCR2","OldCR3","OldMetal1","OldMetal2","OilHead","OilWings","OilUpperP","OilUnderP","OilLegs","OilSum"
+)
+raw <- read_excel(ringing_path, sheet = "Data", skip = 2, col_names = col_names_47)
+
+terns <- raw %>%
+  filter(Species %in% c("STEALB", "STEHIR")) %>%
+  mutate(
+    year = year(Date),
+    month = month(Date),
+    ring_id = paste0(trimws(RingPrefix), RingNum),
+    is_new = is.na(Rec) | trimws(Rec) == "",
+    species_label = ifelse(Species == "STEHIR", "Common Tern", "Little Tern")
+  )
+```
+
+# Identifying breeding individuals and their within-season records
+
+Reuses the task 2c confirmed-breeder definition: any adult (new ringing or
+recapture) weighed in spring (Mar-May), confirmed as a breeder if that
+ring was also recorded in June/July of any year.
+
+```{r confirmed-breeders}
+juvenile_ages <- c(1, 3)
+
+summer_ring_ids_anyyear <- terns %>%
+  filter(month %in% 6:7) %>%
+  distinct(ring_id) %>%
+  pull(ring_id)
+
+confirmed_breeder_ids <- terns %>%
+  filter(!(Age %in% juvenile_ages), !is.na(Weight), month %in% 3:5) %>%
+  filter(ring_id %in% summer_ring_ids_anyyear) %>%
+  distinct(ring_id, Species)
+
+kable(confirmed_breeder_ids %>% count(Species), caption = "Confirmed-breeder individuals (distinct ring_id)")
+```
+
+**Season window**: Jun-Aug (broader than task 2's Jun-Jul, to cover the
+full incubation-through-fledging period so "early vs. late season" has
+something to contrast - trimmed at Aug since Sep records are negligible
+sheet-wide, see `data_raw/README.md`). All weighed records (new ringing OR
+recapture) for a confirmed breeder's ring in this window, any year, count
+as one within-season data point - not restricted to `is_new` here, since
+we want every weighing of a known breeder across the season, not just
+first captures.
+
+```{r within-season-records}
+breeding_season_records <- terns %>%
+  filter(!is.na(Weight), month %in% 6:8) %>%
+  inner_join(confirmed_breeder_ids, by = c("ring_id", "Species")) %>%
+  # Date comes in as POSIXct from readxl (not plain Date), so a naive
+  # Date - Date subtraction returns a difftime in SECONDS, not days - force
+  # both sides to Date class first so the subtraction is genuinely in days.
+  mutate(day_of_season = as.numeric(as.Date(Date) - as.Date(ymd(paste0(year, "-06-01")))))
+
+kable(breeding_season_records %>% count(species_label, name = "n_records"),
+      caption = "Within-season (Jun-Aug) weighed records for confirmed breeders")
+```
+
+**Important data-availability caveat**: a confirmed breeder is identified
+from *any* record (recapture or resighting, weighed or not) in June/July
+of any year, but this task needs an actual *weighed* Jun-Aug record to put
+on the mass-vs-day-of-season axis - and those are much rarer, since most
+summer contact with already-ringed adults is a resighting (colour ring
+read at a distance), not a physical recapture. In practice this means the
+most recent **weighed** within-season record for a confirmed Common Tern
+breeder is from **2023** - there are none in 2024, 2025, or 2026. Little
+Tern is similarly thin in recent years (a single record in 2025, none in
+2021/2023/2024/2026). **This means the "most recent year" analysis below
+cannot actually test 2026 against prior years - there is no weighed data
+to test it with** - so it does not directly speak to this year's field
+observation (terns bringing fish they couldn't eat). Flagging this
+plainly rather than letting the 2023-vs-prior result read as if it
+addresses the 2026 observation.
+
+# Little Tern: within-season pattern (pooled across years)
+
+```{r little-tern-season}
+alb_season <- breeding_season_records %>% filter(Species == "STEALB")
+
+m_alb <- lm(Weight ~ day_of_season, data = alb_season)
+s_alb <- summary(m_alb)
+
+cat("Little Tern: slope =", round(coef(m_alb)["day_of_season"], 4), "g/day, p =",
+    signif(s_alb$coefficients["day_of_season", "Pr(>|t|)"], 3),
+    ", n =", nrow(alb_season), "\n")
+```
+
+```{r little-tern-season-plot}
+ggplot(alb_season, aes(day_of_season, Weight)) +
+  geom_jitter(width = 0.5, alpha = 0.3, color = "#1b9e77") +
+  geom_smooth(method = "lm", color = "#1b9e77") +
+  scale_x_continuous(breaks = c(0, 30, 61, 91), labels = c("Jun 1", "Jul 1", "Aug 1", "Aug 31")) +
+  labs(title = "Little Tern confirmed breeders: within-season mass (all years pooled)",
+       x = "Date within breeding season", y = "Weight (g)") +
+  theme_minimal()
+```
+
+## Interpretation
+
+No year-splitting here per the scoping above - task 3 already established
+there's no significant Little Tern mass-vs-year trend to interact with a
+within-season pattern.
+
+# Common Tern: within-season pattern, and does it differ by year?
+
+```{r common-tern-season}
+hir_season <- breeding_season_records %>% filter(Species == "STEHIR")
+
+m_hir <- lm(Weight ~ day_of_season, data = hir_season)
+s_hir <- summary(m_hir)
+
+cat("Common Tern (pooled): slope =", round(coef(m_hir)["day_of_season"], 4), "g/day, p =",
+    signif(s_hir$coefficients["day_of_season", "Pr(>|t|)"], 3),
+    ", n =", nrow(hir_season), "\n")
+```
+
+Per-year within-season trajectories, colored on a continuous scale by
+year (rather than a 16-entry discrete legend) so a year that stands out
+from the rest is visually obvious regardless of whether it's an early or
+recent year:
+
+```{r common-tern-season-plot, fig.height=6}
+ggplot(hir_season, aes(day_of_season, Weight, color = year)) +
+  geom_jitter(width = 0.5, alpha = 0.4, size = 1.2) +
+  geom_smooth(aes(group = year), method = "lm", se = FALSE, linewidth = 0.5, alpha = 0.6) +
+  geom_smooth(color = "black", method = "lm", se = FALSE, linewidth = 1.2, linetype = "dashed") +
+  scale_color_viridis_c(name = "Year") +
+  scale_x_continuous(breaks = c(0, 30, 61, 91), labels = c("Jun 1", "Jul 1", "Aug 1", "Aug 31")) +
+  labs(title = "Common Tern confirmed breeders: within-season mass by year",
+       subtitle = "Thin lines = per-year trend, dashed black = pooled trend",
+       x = "Date within breeding season", y = "Weight (g)") +
+  theme_minimal()
+```
+
+## Does the within-season trajectory differ by year?
+
+```{r common-tern-interaction}
+m_interact <- lm(Weight ~ day_of_season * factor(year), data = hir_season)
+a_interact <- anova(m_interact)
+p_interact <- signif(a_interact["day_of_season:factor(year)", "Pr(>F)"], 3)
+cat("day_of_season x year interaction: p =", p_interact, "\n")
+```
+
+## Is the most recent year (with weighed data) different from prior years?
+
+**Not a test of 2026** - see the data-availability caveat above. This
+tests whether `r max(hir_season$year)` (the most recent year that has any
+weighed within-season records for a confirmed breeder) differs from the
+pooled trajectory of prior years. Included for completeness/robustness of
+the interaction test above, not as an answer to the field observation -
+that would need either a weighed sample from 2026 that doesn't currently
+exist, or a different proxy (e.g. resighted body condition scores, if
+those exist) to substitute for actual mass.
+
+```{r common-tern-recent-year}
+hir_season_recent <- hir_season %>%
+  mutate(is_recent_year = year == max(year))
+
+m_recent <- lm(Weight ~ day_of_season * is_recent_year, data = hir_season_recent)
+s_recent <- summary(m_recent)
+kable(as.data.frame(round(s_recent$coefficients, 4)),
+      caption = paste("Weight ~ day_of_season * is_recent_year (", max(hir_season$year), "vs. all prior years)"))
+```
+
+```{r common-tern-recent-year-plot}
+hir_season_recent %>%
+  mutate(year_group = ifelse(is_recent_year, as.character(max(hir_season$year)), "All prior years")) %>%
+  ggplot(aes(day_of_season, Weight, color = year_group)) +
+  geom_jitter(width = 0.5, alpha = 0.3) +
+  geom_smooth(method = "lm", se = TRUE) +
+  scale_x_continuous(breaks = c(0, 30, 61, 91), labels = c("Jun 1", "Jul 1", "Aug 1", "Aug 31")) +
+  labs(title = paste("Common Tern:", max(hir_season$year), "vs. all prior years"),
+       x = "Date within breeding season", y = "Weight (g)", color = NULL) +
+  theme_minimal()
+```
+
+## Interpretation
+
+Read the omnibus interaction test (all years) and the most-recent-year
+contrast together: the omnibus test asks "does the slope vary at all
+across the 16 years" (expected to find *some* year-to-year wobble by
+chance alone with this many years); the most-recent-year contrast is the
+targeted test actually motivated by the field observation. A significant
+`day_of_season:is_recent_year` term means this year's within-season mass
+trend genuinely differs in shape (not just in overall level) from prior
+years - consistent with, though not proof of, a recent food-availability
+change.
+
+# Save outputs
+
+```{r save-outputs}
+write.csv(breeding_season_records %>% select(-species_label),
+          file.path(proc_dir, "within_season_mass_records.csv"), row.names = FALSE)
+cat("Wrote data_processed/within_season_mass_records.csv\n")
+```

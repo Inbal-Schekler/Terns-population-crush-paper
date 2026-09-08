@@ -270,10 +270,43 @@ corrected for in any script.
     g/year breeder-only decline. Little Tern unsplit: -0.16 g/year
     (p=0.0036).
 
+- **Issue #5 task 4 done**: `scripts/04_within_season_mass.Rmd` (renders
+  to `output/04_within_season_mass.html`). Scoped per Inbal: Little Tern
+  gets only a pooled (no year-split) within-season check, since task 3
+  found no year effect for this species; Common Tern gets the pooled
+  check plus a check of whether the trajectory differs by year, motivated
+  by a 2026 field observation (terns bringing fish they couldn't eat, not
+  seen in prior years). Population = task 2c confirmed breeders; season
+  window Jun-Aug (broader than task 2's Jun-Jul, to have an "early vs.
+  late" contrast); x-axis = day-of-season (days since Jun 1).
+  - Bug caught and fixed mid-build: `day_of_season` was initially computed
+    as a `POSIXct - Date` difftime, which defaults to **seconds**, not
+    days (readxl reads `Date` as POSIXct even with no time component) -
+    coefficients were coming out as ~1e-9 g/"day". Fixed by coercing both
+    sides to `Date` class before subtracting.
+  - **Important data-availability finding**: a confirmed breeder only
+    needs *any* Jun/Jul record (resighting counts); this task needs an
+    actual **weighed** Jun-Aug record, which is much rarer. The most
+    recent weighed within-season record for a confirmed Common Tern
+    breeder is from **2023** - none in 2024, 2025, or 2026. Little Tern:
+    one record in 2025, none in 2021/2023/2024/2026. **The 2026 field
+    observation cannot currently be tested against mass data** - flagged
+    prominently in the report rather than silently comparing 2023-vs-prior
+    and implying it answers the 2026 question.
+  - Results: Little Tern pooled slope -0.01 g/day (p=0.686, no pattern).
+    Common Tern pooled slope **+0.14 g/day (p=0.0075)** - mass
+    *increases* over the season (opposite of the original task
+    hypothesis that incubation/chick-rearing costs would show up as a
+    *decline*; plausibly pre-migration fattening by August instead).
+    Year x day-of-season interaction (all years with data, 2010-2023):
+    p=0.616, not significant, but likely underpowered (n=75 total,
+    spread across 14 years).
+
 ### Next session - pick up here
-- Issue #5, remaining task 4: within-season mass trajectory (and whether
-  it's shifted in the most recent year) for breeding individuals
-  specifically.
+- Issue #5 tasks 1-4 all done. Consider: does the 2026 fish-provisioning
+  observation need a different proxy than ringing-database mass (e.g.
+  field condition notes, chick weight/growth data) since no confirmed
+  breeder has been weighed in-hand during summer since 2023?
 - Whether the same confirmed-breeder refinement should also inform which
   individuals count toward the breeding-season (task 2) metric is still
   an open design question.
