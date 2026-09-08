@@ -234,6 +234,11 @@ corrected for in any script.
   the confirmed-breeder definition for downstream analysis - "the broader
   thing... more right." Task 2b (same-year) kept in the Rmd for
   reference/transparency, not deleted, but not the one to build on.
+- Added `hirMASS_breed`/`albMASS_breed` to `master_dataset_2010_2026.csv`
+  (task 2c/any-year confirmed-breeder mean weight per year/species) - this
+  had been computed and written to its own CSV but not merged into the
+  master dataset; fixed per Inbal's request. NA where a species/year has
+  no confirmed breeders (Little Tern 2024-2025).
 
 ### Next session - pick up here
 - Issue #5, remaining tasks 3-4: mass-vs-year correlation per species,

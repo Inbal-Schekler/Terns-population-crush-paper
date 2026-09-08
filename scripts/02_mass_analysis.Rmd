@@ -455,7 +455,7 @@ kable(confirmed_by_year_anyyear, digits = 2)
 ```
 
 ```{r confirmed-breeder-anyyear-plot}
-ggplot(confirmed_by_year_anyyear, aes(year, mean_weight, color = confirmed_breeder_anyyear, size = n)) +
+ggplot(confirmed_by_year_anyyear, aes(year, mean_weight, color = confirmed_breeder_anyyear)) +
   geom_point() + geom_line(aes(group = confirmed_breeder_anyyear)) +
   facet_wrap(~Species, scales = "free_y") +
   labs(title = "Spring mass: any-year confirmed breeders vs. never recorded in summer",
@@ -539,12 +539,25 @@ mass_wide <- spring_mass %>%
   select(year, col, mean_weight) %>%
   pivot_wider(names_from = col, values_from = mean_weight)
 
+# ---- Add hirMASS_breed/albMASS_breed: confirmed-breeder spring mass ----
+# Uses the chosen (task 2c, any-year site-fidelity) confirmed-breeder
+# definition - mean spring Weight of adults also recorded in June/July of
+# ANY year. Years with no confirmed breeders for a species are left NA.
+breed_mass_wide <- spring_adults_anyyear %>%
+  filter(confirmed_breeder_anyyear) %>%
+  group_by(year, Species) %>%
+  summarise(mean_weight = round(mean(Weight), 1), .groups = "drop") %>%
+  mutate(col = ifelse(Species == "STEHIR", "hirMASS_breed", "albMASS_breed")) %>%
+  select(year, col, mean_weight) %>%
+  pivot_wider(names_from = col, values_from = mean_weight)
+
 master_path <- file.path(proc_dir, "master_dataset_2010_2026.csv")
 master <- read.csv(master_path) %>%
-  select(-hirMASS, -albMASS) %>%
+  select(-hirMASS, -albMASS, -any_of(c("hirMASS_breed", "albMASS_breed"))) %>%
   left_join(mass_wide, by = "year") %>%
+  left_join(breed_mass_wide, by = "year") %>%
   rename(hirMASS = hirMASS_new, albMASS = albMASS_new)
 
 write.csv(master, master_path, row.names = FALSE, na = "NA")
-cat("Updated", master_path, "and wrote 3 CSVs to", proc_dir, "\n")
+cat("Updated", master_path, "(added hirMASS_breed/albMASS_breed) and wrote 3 CSVs to", proc_dir, "\n")
 ```
