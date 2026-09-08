@@ -230,14 +230,15 @@ corrected for in any script.
     passing-through-vs-staying contrast to detect for this species in the
     first place, not a power problem).
 
+- **Decided (2026-09-08, Inbal)**: use task 2c (any-year site-fidelity) as
+  the confirmed-breeder definition for downstream analysis - "the broader
+  thing... more right." Task 2b (same-year) kept in the Rmd for
+  reference/transparency, not deleted, but not the one to build on.
+
 ### Next session - pick up here
 - Issue #5, remaining tasks 3-4: mass-vs-year correlation per species,
   within-season mass trajectory (and whether it's shifted in the most
   recent year) for breeding individuals specifically.
-- Decide which confirmed-breeder definition (2b same-year vs. 2c any-year
-  site-fidelity) to use going forward - Inbal is weighing both, not yet
-  decided. Common Tern's confirmed-breeder-lighter finding is robust under
-  both; Little Tern shows no effect under either.
 - Whether the same confirmed-breeder refinement should also inform which
   individuals count toward the breeding-season (task 2) metric is still
   an open design question.

@@ -399,8 +399,9 @@ Summary of what it contains and found:
   had found a significant year-controlled effect (+1.57g, p=0.02), but
   that turned out to be a small-sample artifact once recaptures were
   correctly included - superseded, don't cite the old number.
-- **Any-year variant** (task 2c, kept alongside task 2b, not yet decided
-  which to use): confirms breeder status from a June/July sighting in
+- **Any-year variant** (task 2c - **chosen definition as of 2026-09-08**,
+  task 2b kept for reference only): confirms breeder status from a
+  June/July sighting in
   *any* year (tern site fidelity - breeders return to the same colony
   repeatedly), not just the same year as the spring weighing. Roughly
   triples the confirmed sample. **Common Tern** n=490, effect unchanged

@@ -2791,6 +2791,9 @@ plausibly the cost of incubation/chick-rearing.</p>
 <div id="task-2b-confirmed-breeder-spring-mass" class="section level1" number="5">
 <h1><span class="header-section-number">5</span> Task 2b:
 Confirmed-breeder spring mass</h1>
+<p><strong>Kept for reference/transparency - task 2c (any-year, below)
+is the chosen definition for downstream analysis as of
+2026-09-08.</strong></p>
 <p><strong>Goal</strong>: check whether Yosef’s original spring mass
 parameter (task 1 - mean weight of <strong>all</strong> spring-caught
 adults, new ringings only) differs from the weight of the subset we’re
@@ -3462,6 +3465,11 @@ group per year.</p>
 <div id="task-2c-confirmed-breeder-spring-mass---any-year-site-fidelity" class="section level1" number="6">
 <h1><span class="header-section-number">6</span> Task 2c:
 Confirmed-breeder spring mass - any-year site fidelity</h1>
+<p><strong>This is the chosen definition for downstream
+analysis</strong> (decided 2026-09-08, after comparing both side by side
+- see the 2b vs. 2c comparison table at the end of this section). Task
+2b (same-year) is kept above for reference/transparency, not
+deleted.</p>
 <p><strong>Rationale</strong> (Inbal): terns are typically
 site-faithful, returning to the same colony year after year. Task 2b
 requires the summer sighting to fall in the <em>same year</em> as the
@@ -3469,13 +3477,12 @@ spring capture. This version relaxes that: a bird recorded in June/July
 of <strong>any</strong> year (not necessarily the same year as the
 spring weighing) is taken as evidence it’s a colony-associated breeder,
 and its spring weight - from whichever year it was caught in spring -
-counts as a “confirmed breeder” data point. This should recover a larger
-confirmed sample than the same-year version, at the cost of a looser
-link between the specific spring weight and evidence of breeding
-<em>that particular</em> year (e.g. a bird could be flagged confirmed
-based on a summer sighting a decade after or before the spring weight
-was recorded). Kept side by side with task 2b rather than replacing it,
-to compare before deciding which definition to use.</p>
+counts as a “confirmed breeder” data point. This recovers a larger
+confirmed sample than the same-year version (roughly 2.5-3x), at the
+cost of a looser link between the specific spring weight and evidence of
+breeding <em>that particular</em> year (e.g. a bird could be flagged
+confirmed based on a summer sighting a decade after or before the spring
+weight was recorded).</p>
 <pre class="r"><code>summer_ring_ids_anyyear &lt;- terns %&gt;%
   filter(month %in% 6:7) %&gt;%
   distinct(ring_id) %&gt;%
