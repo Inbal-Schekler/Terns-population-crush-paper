@@ -463,6 +463,27 @@ corrected for in any script.
   - Writes `data_processed/summer_breeder_mass_records.csv` and
     `data_processed/summer_breeder_mass_trends_stats.csv`.
 
+- **Issue #9 done (2026-09-20)**: `scripts/08_summer_chick_mass_trends.Rmd`
+  (renders to `output/08_summer_chick_mass_trends.html`). Same approach as
+  #8 but for chicks: this-year juveniles (age 3), Jun-Aug (matching the
+  established juvenile window, wider than #8's Jun-Jul adult window),
+  **including recaptures as well as new ringings** (#5/#6 used new
+  ringings only). n: Common Tern 1274, Little Tern 220 (with Wing).
+  - **Common Tern: raw mass not significant (p=0.19), but both
+    normalized metrics are** (ratio p=0.0005; SMI -0.29 g/year, p=0.0002)
+    - matches #6's finding almost exactly (SMI -0.29 g/year, p=0.0003
+      there too) despite the different sample (recaptures now included,
+      slightly different n). Wing-normalization reveals a chick decline
+      that raw mass alone doesn't detect for this species.
+  - **Little Tern: no significant trend under any metric** (raw p=0.06,
+    borderline positive; ratio p=0.30; SMI p=0.38). **Caveat: 2024 and
+    2025 each have only n=1** - essentially no chick weight data for
+    Little Tern in the last two years, so recent-year values are not
+    meaningful on their own (visible as isolated high/low points in the
+    plot, not a real signal).
+  - Writes `data_processed/summer_chick_mass_records.csv` and
+    `summer_chick_mass_trends_stats.csv`.
+
 ### Next session - pick up here
 - **Issue #8 follow-up**: reconcile the flat summer-breeder trend with
   the significant spring-confirmed-breeder decline from #5/#6/#7 - see
