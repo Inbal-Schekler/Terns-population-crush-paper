@@ -33,9 +33,14 @@ What this script checks instead: whether **when within the spring season
 if so, whether that drift could be inflating or masking the mass-decline
 trend already reported in issue #5 task 3 / issue #6.
 
-Scope: spring-caught **adult breeder / non-breeder** groups only (same
-definitions as task 3) - juveniles aren't relevant here, since they're
-caught in summer, not spring.
+Scope: spring-caught adults only (juveniles aren't relevant here, since
+they're caught in summer, not spring). **Common Tern** is split into
+breeder/non-breeder (same definitions as task 3), since #5 found a real
+mass difference between them. **Little Tern is kept as a single "Adult"
+group, unsplit** - #5 task 2 found no significant mass difference between
+Little Tern breeders and non-breeders under either definition (2b: p=0.32-0.62;
+2c: p=0.61-0.77), so splitting it here would just be dividing an already
+small sample (n=184-224 per subgroup) for no analytical benefit.
 
 # Data loading
 
@@ -91,8 +96,15 @@ spring_adults <- terns %>%
   filter(!(Age %in% juvenile_ages), !is.na(Weight), month %in% 3:5) %>%
   mutate(
     confirmed_breeder_anyyear = ring_id %in% summer_ring_ids_anyyear,
-    group = ifelse(confirmed_breeder_anyyear, "Adult breeder", "Adult non-breeder"),
-    group = factor(group, levels = c("Adult non-breeder", "Adult breeder")),
+    group = case_when(
+      species_label == "Little Tern" ~ "Adult",
+      confirmed_breeder_anyyear ~ "Adult breeder",
+      TRUE ~ "Adult non-breeder"
+    ),
+    group = factor(group, levels = c("Adult", "Adult non-breeder", "Adult breeder")),
+    panel_label = factor(paste(species_label, group, sep = " - "),
+                          levels = c("Common Tern - Adult non-breeder", "Common Tern - Adult breeder",
+                                     "Little Tern - Adult")),
     day_of_season = as.numeric(date - as.Date(paste0(year, "-03-01")))
   )
 
@@ -109,7 +121,7 @@ Individual-level `Weight ~ day_of_season` regression, per species and group.
 
 ```{r within-season-mass}
 within_season_stats <- spring_adults %>%
-  group_by(species_label, group) %>%
+  group_by(species_label, group, panel_label) %>%
   filter(n() >= 10) %>%
   group_modify(~ {
     m <- lm(Weight ~ day_of_season, data = .x)
@@ -127,14 +139,14 @@ within_season_stats <- spring_adults %>%
 kable(within_season_stats, caption = "Weight ~ day_of_season, by species and group")
 ```
 
-```{r within-season-plot}
-sig_ws <- within_season_stats %>% filter(p_value < 0.05) %>% distinct(species_label, group)
-spring_adults_sig <- spring_adults %>% semi_join(sig_ws, by = c("species_label", "group"))
+```{r within-season-plot, fig.width=11, fig.height=4.5}
+sig_ws <- within_season_stats %>% filter(p_value < 0.05) %>% distinct(panel_label)
+spring_adults_sig <- spring_adults %>% semi_join(sig_ws, by = "panel_label")
 
 ggplot(spring_adults, aes(day_of_season, Weight, color = species_label)) +
   geom_point(alpha = 0.15, size = 0.8) +
   geom_smooth(data = spring_adults_sig, method = "lm", se = FALSE, linewidth = 0.9) +
-  facet_grid(group ~ species_label, scales = "free_y") +
+  facet_wrap(~panel_label, ncol = 3, scales = "free_y") +
   guides(color = "none") +
   labs(title = "Mass vs. day-of-season within the spring window (Mar-May)",
        subtitle = "Trend line shown only where the day-of-season slope is significant (p<0.05)",
@@ -150,7 +162,7 @@ earlier or later in the spring window than early years'.
 
 ```{r date-shift-stats}
 date_shift_stats <- spring_adults %>%
-  group_by(species_label, group) %>%
+  group_by(species_label, group, panel_label) %>%
   filter(n() >= 10, n_distinct(year) >= 3) %>%
   group_modify(~ {
     m <- lm(day_of_season ~ year, data = .x)
@@ -168,14 +180,14 @@ date_shift_stats <- spring_adults %>%
 kable(date_shift_stats, caption = "day_of_season ~ year, by species and group")
 ```
 
-```{r date-shift-plot}
-sig_ds <- date_shift_stats %>% filter(p_value < 0.05) %>% distinct(species_label, group)
-spring_adults_sig_ds <- spring_adults %>% semi_join(sig_ds, by = c("species_label", "group"))
+```{r date-shift-plot, fig.width=11, fig.height=4.5}
+sig_ds <- date_shift_stats %>% filter(p_value < 0.05) %>% distinct(panel_label)
+spring_adults_sig_ds <- spring_adults %>% semi_join(sig_ds, by = "panel_label")
 
 ggplot(spring_adults, aes(year, day_of_season, color = species_label)) +
   geom_point(alpha = 0.15, size = 0.8) +
   geom_smooth(data = spring_adults_sig_ds, method = "lm", se = FALSE, linewidth = 0.9) +
-  facet_grid(group ~ species_label, scales = "free_y") +
+  facet_wrap(~panel_label, ncol = 3, scales = "free_y") +
   guides(color = "none") +
   labs(title = "Day-of-season of weighed adults, by year",
        subtitle = "Trend line shown only where the year slope is significant (p<0.05)",
@@ -190,23 +202,27 @@ sampling date itself is shifting by `delta` days per year (section 2), the
 date shift alone would be expected to move the yearly mass average by
 `beta * delta` g/year - compare this implied contribution against the
 actual observed mass-decline slope from issue #5 task 3
-(`data_processed/mass_trends_stats.csv`, raw mass, breeder/non-breeder
-groups) to see whether the date shift works with the decline (would
-partly explain it) or against it (the true decline may be understated).
+(`data_processed/mass_trends_stats.csv`, raw mass) to see whether the date
+shift works with the decline (would partly explain it) or against it (the
+true decline may be understated). For Little Tern, the comparison uses
+task 3's **"All adults (unsplit)"** slope, matching the unsplit `Adult`
+group used here.
 
 ```{r combine}
 observed_trend <- read.csv(file.path(proc_dir, "mass_trends_stats.csv")) %>%
-  filter(group %in% c("Adult breeder", "Adult non-breeder")) %>%
+  filter(group %in% c("Adult breeder", "Adult non-breeder", "All adults (unsplit)")) %>%
   select(species_label, group, observed_slope_g_per_year = slope_g_per_year, observed_p = p_value)
 
 combined_check <- within_season_stats %>%
-  select(species_label, group, within_season_slope = slope_g_per_day, within_season_p = p_value) %>%
+  select(species_label, group, panel_label, within_season_slope = slope_g_per_day, within_season_p = p_value) %>%
   inner_join(
     date_shift_stats %>% select(species_label, group, date_shift_slope = slope_days_per_year, date_shift_p = p_value),
     by = c("species_label", "group")
   ) %>%
   mutate(implied_contribution_g_per_year = round(within_season_slope * date_shift_slope, 4)) %>%
-  inner_join(observed_trend, by = c("species_label", "group")) %>%
+  mutate(observed_join_group = ifelse(species_label == "Little Tern", "All adults (unsplit)", as.character(group))) %>%
+  inner_join(observed_trend, by = c("species_label" = "species_label", "observed_join_group" = "group")) %>%
+  select(-observed_join_group) %>%
   mutate(
     pct_of_observed = round(100 * implied_contribution_g_per_year / observed_slope_g_per_year, 1),
     direction = ifelse(sign(implied_contribution_g_per_year) == sign(observed_slope_g_per_year),

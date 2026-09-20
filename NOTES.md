@@ -357,19 +357,25 @@ corrected for in any script.
   selection bias itself isn't a live concern. What this checks instead:
   whether *when within the spring season (Mar-May)* weighed birds were
   caught has drifted over the years, and whether that could explain (or
-  mask) the mass-decline trend from issue #5 task 3.
+  mask) the mass-decline trend from issue #5 task 3. **Little Tern kept
+  as a single unsplit `Adult` group throughout** (not breeder/non-breeder)
+  - per Inbal, since #5 task 2 already found no significant mass
+  difference between Little Tern breeders and non-breeders under either
+  definition, so splitting an already-small sample here adds nothing.
+  Common Tern still split into breeder/non-breeder.
   - **Within-season pattern**: mass *increases* with day-of-season within
     spring for Common Tern (non-breeder +0.131 g/day, p=1.75e-10; breeder
     +0.085 g/day, p=0.017) - later-spring birds are heavier. No pattern
-    for Little Tern (both n.s.).
+    for Little Tern adults (+0.019 g/day, p=0.35, n.s.).
   - **Date shift**: the day-of-season of weighed birds has shifted
-    significantly *earlier* over the years, in all 4 species x group
+    significantly *earlier* over the years, in all 3 species x group
     combinations (Common Tern non-breeder -1.43 days/year p=1e-83; Common
-    Tern breeder -0.41 days/year p=0.006; Little Tern non-breeder -1.21
-    days/year p=3e-11; Little Tern breeder -0.39 days/year p=0.046).
+    Tern breeder -0.41 days/year p=0.006; Little Tern adult -0.86
+    days/year p=8.6e-11).
   - **Combined (within-season slope x date shift = implied yearly
     contribution to the mass trend), compared to the actual observed
-    slope from issue #5 task 3**:
+    slope from issue #5 task 3** (Little Tern compared against task 3's
+    "All adults (unsplit)" slope, -0.164 g/year, p=0.0036):
     - **Common Tern non-breeder: implied contribution -0.188 g/year vs.
       observed -0.173 g/year - effectively 108% of the observed
       non-breeder decline.** This significant secondary-group decline
@@ -379,22 +385,23 @@ corrected for in any script.
       observed -0.554 g/year - only 6.2%.** The breeder-specific decline
       (the paper's headline finding) is essentially untouched by this
       artifact.
-    - Little Tern non-breeder: 34.7%, but the within-season slope itself
-      wasn't significant (p=0.22) and neither was the observed decline
-      (p=0.13) - low-confidence estimate either way.
-    - **Little Tern breeder: ~0% (within-season slope p=0.979, no
-      relationship at all).** Headline finding for this species is also
-      untouched.
+    - **Little Tern adult: implied contribution -0.017 g/year vs.
+      observed -0.164 g/year - 10.1%.** Small contribution, and the
+      within-season slope itself isn't significant (p=0.35), so this is a
+      low-confidence estimate - but either way it doesn't explain much of
+      the Little Tern decline.
   - **Net read: good news for the paper's core claim.** The
-    breeder-specific decline in both species survives this check almost
-    entirely intact. What's newly suspect is the **Common Tern
-    non-breeder decline specifically** - it may be largely a sampling-date
-    artifact rather than a true trend. If anything this *strengthens* the
-    breeder-vs-non-breeder contrast: it's not that breeders and
-    non-breeders are both declining for the same reason, it's that
-    breeders show a real decline while the non-breeder "decline" may be
-    substantially artifactual - two genuinely different patterns, not one
-    shared artifact.
+    breeder-specific decline in Common Tern survives this check almost
+    entirely intact, and the Little Tern decline (already the weaker of
+    the two headline results) isn't meaningfully explained by timing
+    either. What's newly suspect is the **Common Tern non-breeder decline
+    specifically** - it may be largely a sampling-date artifact rather
+    than a true trend. If anything this *strengthens* the
+    breeder-vs-non-breeder contrast for Common Tern: it's not that
+    breeders and non-breeders are both declining for the same reason, it's
+    that breeders show a real decline while the non-breeder "decline" may
+    be substantially artifactual - two genuinely different patterns, not
+    one shared artifact.
   - Worth reconciling with #6: the wing-normalized (SMI) version made the
     Common Tern non-breeder decline larger and more significant
     (-0.386 g/year, p=1.58e-06) than raw mass. If that non-breeder decline
