@@ -485,6 +485,32 @@ corrected for in any script.
     `summer_chick_mass_trends_stats.csv`.
 
 ### Next session - pick up here
+- **Issue #9 interpretation note (2026-09-20, not yet written into the
+  issue as analysis, just discussed)**: wing-length normalization makes
+  more sense for chicks than it does for adults, for a different reason
+  than in the adult case. In adults, wing length is fixed structural
+  size; in **growing chicks, wing chord is still lengthening through the
+  nestling period, so it's effectively an age/developmental-stage proxy**
+  - a chick caught in early June (short wing) weighs much less than one
+  caught in August (long wing, near-fledging) for reasons that have
+  nothing to do with condition. This means issue #9's raw-mass-vs-
+  normalized-mass split for Common Tern (raw p=0.19 n.s., SMI/ratio
+  p<0.001) isn't normalization introducing an artifact - it's raw mass
+  being too noisy (dominated by which growth stage each year's catch
+  happened to sample) to detect a real signal that normalization reveals.
+  Strengthens confidence in the Common Tern chick decline being real.
+  Considered but not done: checking whether the age-at-capture itself
+  (mean chick wing length per year) has drifted over time, the same way
+  #7 checked date-drift for adults - would help confirm this
+  interpretation directly. Skipped this session per Inbal ("it's ok") -
+  available to pick up later if useful.
+- **Issue #9 data point worth flagging to Yosef**: Common Tern 2026 chick
+  mean raw mass (110.4g, n=40) is the **4th-lowest of the 17 years on
+  record** (2014, 2019, 2017 are lower; 2026 is close behind). Solid
+  sample size, not a small-n fluke. Little Tern has **no 2026 chick
+  weight data at all** (last Little Tern chick weights are from 2024,
+  n=1 - see #9's n=1 caveat), so this specific "recent year is low"
+  observation only applies to Common Tern.
 - **Issue #8 follow-up**: reconcile the flat summer-breeder trend with
   the significant spring-confirmed-breeder decline from #5/#6/#7 - see
   note above. This is now the central open question for the mass-decline
