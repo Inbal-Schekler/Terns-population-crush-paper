@@ -425,7 +425,50 @@ corrected for in any script.
   - Writes `data_processed/spring_timing_within_season_stats.csv`,
     `spring_timing_date_shift_stats.csv`, `spring_timing_combined_check.csv`.
 
+- **Issue #8 done (2026-09-20)**: `scripts/07_summer_breeder_mass_trends.Rmd`
+  (renders to `output/07_summer_breeder_mass_trends.html`). All mass-trend
+  work so far (#5 task 3, #6, #7) used spring-caught adults with
+  "confirmed breeder" status requiring a separate Jun/Jul sighting - a
+  small, and in recent years very small, sample. This looks directly at
+  adults caught **in the colony during Jun-Jul itself** - by construction
+  all breeders, so **no breeder/non-breeder split** (single "Summer adult"
+  group per species, matching how Little Tern is already treated
+  everywhere else). **Includes recaptures as well as new ringings** (per
+  Inbal - #5 task 2 only used new ringings). Much bigger and more evenly
+  distributed sample: Common Tern n=1283 (vs. 485 spring-confirmed),
+  Little Tern n=683 (vs. 406) - no coverage collapse in recent years the
+  way the spring data had (see #7).
+  - **Result: no significant mass trend at all, under any metric, for
+    either species.** Common Tern: raw p=0.80, ratio p=0.45, SMI p=0.19.
+    Little Tern: raw p=0.38, ratio p=0.19, SMI p=0.10. Slopes are all
+    small and inconsistently signed (near zero, slightly positive for raw
+    mass in both species) - visually flat/noisy year-to-year scatter, no
+    directional pattern (see plot).
+  - **This does not match the spring-based "confirmed breeder" decline**
+    from #5 task 3 (Common Tern -0.55 g/year p=1.6e-06; Little Tern -0.24
+    g/year p=0.007). Two very different pictures of "breeding adult mass
+    over time" depending on how the breeding population is sampled -
+    worth discussing directly with Yosef before deciding which one (if
+    either) the paper should lead with. Possible explanations, none
+    confirmed: (a) the spring "confirmed breeder" definition is itself
+    capturing something real that a same-summer catch doesn't (e.g. early
+    arrival condition specifically); (b) the spring-based decline is
+    partly an artifact of its shrinking/changing sample (per #7's finding
+    that timing drift explains ~100% of the Common Tern non-breeder
+    decline - worth checking if something similar affects the breeder
+    figure); (c) summer catch composition has its own uncontrolled
+    variation (e.g. which sub-colony, which net, time within the 2-month
+    window) that could be masking a real trend. Not resolved here -
+    flagging as the key open question rather than picking one explanation.
+  - Writes `data_processed/summer_breeder_mass_records.csv` and
+    `data_processed/summer_breeder_mass_trends_stats.csv`.
+
 ### Next session - pick up here
+- **Issue #8 follow-up**: reconcile the flat summer-breeder trend with
+  the significant spring-confirmed-breeder decline from #5/#6/#7 - see
+  note above. This is now the central open question for the mass-decline
+  story and should probably be discussed with Yosef before more analysis
+  variants are built.
 - **Issue #7 follow-up**: reconcile the Common Tern non-breeder
   timing-artifact finding above with issue #6's SMI results before citing
   either in the paper - see the note above.

@@ -1,0 +1,7 @@
+"species_label","n","n_years","slope_per_year","se","p_value","r_squared","metric"
+"Common Tern",1283,16,0.0144,0.0557,0.796,0,"Raw mass (g)"
+"Common Tern",1283,16,2e-04,2e-04,0.452,0,"Mass/Wing ratio"
+"Common Tern",1283,16,0.089,0.0673,0.186,0.001,"SMI (g, rescaled)"
+"Little Tern",683,17,0.0283,0.0322,0.38,0.001,"Raw mass (g)"
+"Little Tern",683,17,2e-04,2e-04,0.194,0.002,"Mass/Wing ratio"
+"Little Tern",683,17,0.0661,0.0405,0.103,0.004,"SMI (g, rescaled)"
