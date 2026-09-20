@@ -1,0 +1,301 @@
+---
+title: "Terns wing-normalized mass trends over time"
+subtitle: "Issue #6 - follow-up to issue #5 task 3, per Yosef's suggestion"
+date: "`r format(Sys.Date())`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                       fig.width = 8, fig.height = 5)
+library(readxl)
+library(dplyr)
+library(lubridate)
+library(tidyr)
+library(ggplot2)
+library(knitr)
+```
+
+# Background
+
+Issue #5 task 3 found that confirmed breeders show a significantly steeper
+mass decline over time than juveniles or non-breeders, in both species (see
+`03_mass_trends.Rmd`). Yosef suggested normalizing mass to wing (chord)
+length before drawing conclusions from a mass trend, on the theory that raw
+mass could partly reflect body-size differences in the sample rather than
+body condition per se.
+
+This is not a settled methods question. A simple mass/wing ratio assumes a
+proportional, through-origin relationship between the two, which body mass
+rarely follows exactly. The better-supported alternative in the literature is
+the **scaled mass index (SMI)** (Peig & Green 2009): fit a standardized major
+axis (SMA) regression of `log(Weight)` on `log(Wing)`, then rescale each
+individual's mass to what it would be at the group's mean wing length, using
+the SMA slope as the scaling exponent. Both are computed here, side by side,
+rather than picking one upfront.
+
+Same three groups as issue #5 task 3, per species: **Juvenile** (age 3,
+Jun-Aug), **Adult breeder** and **Adult non-breeder** (spring weight, task 2c
+any-year confirmed-breeder split).
+
+# Data loading
+
+```{r load-data}
+raw_dir <- "../data_raw"
+if (!dir.exists(raw_dir)) raw_dir <- "data_raw"
+stopifnot(dir.exists(raw_dir))
+
+proc_dir <- "../data_processed"
+if (!dir.exists(proc_dir)) proc_dir <- "data_processed"
+
+out_dir <- "../output"
+if (!dir.exists(out_dir)) out_dir <- "output"
+
+ringing_path <- file.path(raw_dir, "ringing_data_raw.xlsx")
+stopifnot(file.exists(ringing_path))
+
+col_names_47 <- c(
+  "CR1","RingReplace","Rec","RingPrefix","RingNum","Species","Sex","Age","Wing","Weight",
+  "Date","Time","Place","Lat","Lon","Ringer","Country","Remarks","Net","CR2","Subsp","Tail","Head",
+  "Breeding","CP1","CP2","CP3","CP4","Colour","D","M","OrigDate","OrigCountry","OrigLat","OrigLon","OrigAge",
+  "OldCR1","OldCR2","OldCR3","OldMetal1","OldMetal2","OilHead","OilWings","OilUpperP","OilUnderP","OilLegs","OilSum"
+)
+raw <- read_excel(ringing_path, sheet = "Data", skip = 2, col_names = col_names_47)
+
+terns <- raw %>%
+  filter(Species %in% c("STEALB", "STEHIR")) %>%
+  mutate(
+    year = year(Date),
+    month = month(Date),
+    ring_id = paste0(trimws(RingPrefix), RingNum),
+    is_new = is.na(Rec) | trimws(Rec) == "",
+    species_label = ifelse(Species == "STEHIR", "Common Tern", "Little Tern")
+  )
+```
+
+# Building the three comparison groups
+
+Identical construction to `03_mass_trends.Rmd`, with the added requirement
+that `Wing` (not just `Weight`) is present - `Wing`/`Weight` are both
+capture-only fields, so this drops very few extra records (checked below).
+
+```{r groups}
+juvenile_records <- terns %>%
+  filter(is_new, Age == 3, !is.na(Weight), month %in% 6:8) %>%
+  mutate(group = "Juvenile")
+
+juvenile_ages <- c(1, 3)
+summer_ring_ids_anyyear <- terns %>%
+  filter(month %in% 6:7) %>%
+  distinct(ring_id) %>%
+  pull(ring_id)
+
+spring_adults_anyyear <- terns %>%
+  filter(!(Age %in% juvenile_ages), !is.na(Weight), month %in% 3:5) %>%
+  mutate(confirmed_breeder_anyyear = ring_id %in% summer_ring_ids_anyyear,
+         group = ifelse(confirmed_breeder_anyyear, "Adult breeder", "Adult non-breeder"))
+
+combined_records_raw <- bind_rows(
+  juvenile_records,
+  spring_adults_anyyear %>% select(-confirmed_breeder_anyyear)
+) %>%
+  mutate(group = factor(group, levels = c("Juvenile", "Adult non-breeder", "Adult breeder")))
+
+n_before <- nrow(combined_records_raw)
+combined_records <- combined_records_raw %>% filter(!is.na(Wing))
+n_after <- nrow(combined_records)
+
+cat("Records with Weight:", n_before, "- also with Wing:", n_after,
+    sprintf("(%.1f%% retained)\n", 100 * n_after / n_before))
+```
+
+```{r coverage-table}
+kable(
+  combined_records %>% group_by(species_label, group) %>%
+    summarise(n = n(), n_years = n_distinct(year),
+              min_year = min(year), max_year = max(year), .groups = "drop"),
+  caption = "Weight+Wing coverage by species and group"
+)
+```
+
+# Does wing length itself trend over time?
+
+Before normalizing, check whether `Wing` shows its own temporal trend within
+each group - if it doesn't, wing-normalized mass should track raw mass
+closely, and this adjustment won't tell us much new for that group.
+
+```{r wing-trend}
+wing_trend <- combined_records %>%
+  group_by(species_label, group) %>%
+  filter(n() >= 10, n_distinct(year) >= 3) %>%
+  group_modify(~ {
+    m <- lm(Wing ~ year, data = .x)
+    s <- summary(m)
+    tibble(
+      n = nrow(.x),
+      slope_mm_per_year = round(coef(m)["year"], 4),
+      p_value = signif(s$coefficients["year", "Pr(>|t|)"], 3)
+    )
+  }) %>%
+  ungroup()
+
+kable(wing_trend, caption = "Wing ~ year regression, by species and group")
+```
+
+# Two normalization methods
+
+## Simple ratio
+
+```{r ratio-mass}
+combined_records <- combined_records %>%
+  mutate(mass_ratio = Weight / Wing)
+```
+
+## Scaled mass index (SMI, Peig & Green 2009)
+
+SMA slope `b` fit **per species x group** (juveniles, breeders and
+non-breeders may have genuinely different mass-wing scaling relationships,
+so pooling would misrepresent all three) on `log(Weight) ~ log(Wing)`. Each
+individual's mass is then rescaled to what it would weigh at that group's
+mean wing length:
+
+`SMI_i = Weight_i * (Wing_mean / Wing_i) ^ b`
+
+where `b` is the SMA slope, `sd(log Weight) / sd(log Wing)` (equivalent to
+the OLS slope divided by the correlation coefficient).
+
+```{r smi-mass}
+compute_smi <- function(df) {
+  lx <- log(df$Wing)
+  ly <- log(df$Weight)
+  b <- sd(ly) / sd(lx)  # SMA slope
+  wing_mean <- mean(df$Wing)
+  df$smi <- df$Weight * (wing_mean / df$Wing) ^ b
+  df$smi_b <- b
+  df
+}
+
+combined_records <- combined_records %>%
+  group_by(species_label, group) %>%
+  group_modify(~ compute_smi(.x)) %>%
+  ungroup()
+
+kable(
+  combined_records %>% distinct(species_label, group, smi_b) %>% arrange(species_label, group),
+  digits = 3, caption = "SMA slope (b) used for SMI, by species and group"
+)
+```
+
+# Trend statistics, all three metrics side by side
+
+```{r trend-stats}
+format_pval <- function(p) {
+  ifelse(p < 0.001, formatC(p, format = "e", digits = 2), formatC(p, format = "f", digits = 3))
+}
+
+fit_trend <- function(df, response) {
+  df %>%
+    group_by(species_label, group) %>%
+    filter(n() >= 3) %>%
+    group_modify(~ {
+      m <- lm(reformulate("year", response = response), data = .x)
+      s <- summary(m)
+      tibble(
+        n = nrow(.x),
+        n_years = n_distinct(.x$year),
+        slope_per_year = round(coef(m)["year"], 4),
+        se = round(s$coefficients["year", "Std. Error"], 4),
+        p_value = signif(s$coefficients["year", "Pr(>|t|)"], 3),
+        r_squared = round(s$r.squared, 3)
+      )
+    }) %>%
+    ungroup() %>%
+    mutate(metric = response)
+}
+
+trend_stats <- bind_rows(
+  fit_trend(combined_records, "Weight"),
+  fit_trend(combined_records, "mass_ratio"),
+  fit_trend(combined_records, "smi")
+) %>%
+  mutate(metric = recode(metric, Weight = "Raw mass (g)",
+                          mass_ratio = "Mass/Wing ratio",
+                          smi = "SMI (g, rescaled)"),
+         metric = factor(metric, levels = c("Raw mass (g)", "Mass/Wing ratio", "SMI (g, rescaled)"))) %>%
+  arrange(species_label, group, metric)
+
+trend_stats_display <- trend_stats %>%
+  mutate(significant = p_value < 0.05, p_value_fmt = format_pval(p_value)) %>%
+  mutate(p_value_fmt = ifelse(significant, paste0("<strong>", p_value_fmt, "</strong>"), p_value_fmt)) %>%
+  select(species_label, group, metric, n, n_years, slope_per_year, se, p_value = p_value_fmt, r_squared)
+
+kable(trend_stats_display, escape = FALSE,
+      caption = "value ~ year regression, by species/group/metric (significant rows, p&lt;0.05, in bold)")
+```
+
+# Visual comparison
+
+```{r trends-plot, fig.height=13}
+long_records <- combined_records %>%
+  select(species_label, group, year, Weight, mass_ratio, smi) %>%
+  pivot_longer(cols = c(Weight, mass_ratio, smi), names_to = "metric", values_to = "value") %>%
+  mutate(metric = recode(metric, Weight = "Raw mass (g)",
+                          mass_ratio = "Mass/Wing ratio",
+                          smi = "SMI (g, rescaled)"),
+         metric = factor(metric, levels = c("Raw mass (g)", "Mass/Wing ratio", "SMI (g, rescaled)")),
+         panel_label = paste(group, species_label, sep = " - "))
+
+ggplot(long_records, aes(year, value, color = species_label)) +
+  geom_point(alpha = 0.15, size = 0.8) +
+  geom_smooth(method = "lm", se = FALSE, linewidth = 0.8) +
+  facet_grid(panel_label ~ metric, scales = "free_y") +
+  guides(color = "none") +
+  labs(title = "Mass trend by year, metric, age class and breeding status",
+       y = NULL, x = "Year") +
+  theme_minimal() +
+  theme(strip.text.y = element_text(angle = 0, size = 7), strip.text.x = element_text(size = 9))
+```
+
+# Does the trend differ between groups? (interaction test, per metric)
+
+```{r trend-interaction, results = "asis"}
+for (metric_col in c("Weight", "mass_ratio", "smi")) {
+  metric_label <- recode(metric_col, Weight = "Raw mass", mass_ratio = "Mass/Wing ratio", smi = "SMI")
+  cat("**", metric_label, "**\n\n", sep = "")
+  for (sp in c("Common Tern", "Little Tern")) {
+    d <- combined_records %>% filter(species_label == sp) %>% droplevels()
+    m <- lm(reformulate(c("year", "group", "year:group"), response = metric_col), data = d)
+    a <- anova(m)
+    p_interaction <- signif(a["year:group", "Pr(>F)"], 3)
+    cat("- ", sp, ": year x group interaction p = ", p_interaction, "\n", sep = "")
+  }
+  cat("\n")
+}
+```
+
+## Interpretation
+
+Compare each metric's breeder-vs-non-breeder-vs-juvenile pattern against the
+raw-mass result from issue #5 task 3 (Common Tern breeder slope -0.55
+g/year, p=1.6e-06; Little Tern breeder slope -0.24 g/year, p=0.007, both
+significantly steeper than the other two groups). If the wing-normalized
+metrics show the same qualitative pattern (breeders declining faster,
+comparable significance), that's reassurance the raw-mass finding isn't an
+artifact of changing body size in the sample. If normalization
+substantially weakens or removes the breeder-specific decline, that
+suggests the raw-mass trend was at least partly a size effect rather than a
+condition effect - see the `Wing ~ year` check above for whether that's
+plausible per group.
+
+# Save outputs
+
+```{r save-outputs}
+write.csv(combined_records %>% select(-smi_b),
+          file.path(proc_dir, "normalized_mass_records.csv"), row.names = FALSE)
+write.csv(trend_stats, file.path(proc_dir, "normalized_mass_trends_stats.csv"), row.names = FALSE)
+cat("Wrote data_processed/normalized_mass_records.csv and normalized_mass_trends_stats.csv\n")
+```
