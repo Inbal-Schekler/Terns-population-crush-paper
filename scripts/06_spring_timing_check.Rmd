@@ -1,0 +1,241 @@
+---
+title: "Terns spring mass-measurement timing check"
+subtitle: "Issue #7 - follow-up to issue #5 task 3, per Yosef"
+date: "`r format(Sys.Date())`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                       fig.width = 8, fig.height = 5)
+library(readxl)
+library(dplyr)
+library(lubridate)
+library(tidyr)
+library(ggplot2)
+library(knitr)
+```
+
+# Background
+
+Yosef doesn't always have time to weigh/measure every bird he catches -
+confirmed with Inbal that *which* birds get weighed when time is short is
+effectively random (whenever he has a free moment), not targeted at
+particular individuals, so that specific selection concern doesn't need
+further checking here.
+
+What this script checks instead: whether **when within the spring season
+(Mar-May)** the weighed birds were caught has drifted over the years, and
+if so, whether that drift could be inflating or masking the mass-decline
+trend already reported in issue #5 task 3 / issue #6.
+
+Scope: spring-caught **adult breeder / non-breeder** groups only (same
+definitions as task 3) - juveniles aren't relevant here, since they're
+caught in summer, not spring.
+
+# Data loading
+
+```{r load-data}
+raw_dir <- "../data_raw"
+if (!dir.exists(raw_dir)) raw_dir <- "data_raw"
+stopifnot(dir.exists(raw_dir))
+
+proc_dir <- "../data_processed"
+if (!dir.exists(proc_dir)) proc_dir <- "data_processed"
+
+out_dir <- "../output"
+if (!dir.exists(out_dir)) out_dir <- "output"
+
+ringing_path <- file.path(raw_dir, "ringing_data_raw.xlsx")
+stopifnot(file.exists(ringing_path))
+
+col_names_47 <- c(
+  "CR1","RingReplace","Rec","RingPrefix","RingNum","Species","Sex","Age","Wing","Weight",
+  "Date","Time","Place","Lat","Lon","Ringer","Country","Remarks","Net","CR2","Subsp","Tail","Head",
+  "Breeding","CP1","CP2","CP3","CP4","Colour","D","M","OrigDate","OrigCountry","OrigLat","OrigLon","OrigAge",
+  "OldCR1","OldCR2","OldCR3","OldMetal1","OldMetal2","OilHead","OilWings","OilUpperP","OilUnderP","OilLegs","OilSum"
+)
+raw <- read_excel(ringing_path, sheet = "Data", skip = 2, col_names = col_names_47)
+
+terns <- raw %>%
+  filter(Species %in% c("STEALB", "STEHIR")) %>%
+  mutate(
+    year = year(Date),
+    month = month(Date),
+    date = as.Date(Date),
+    ring_id = paste0(trimws(RingPrefix), RingNum),
+    is_new = is.na(Rec) | trimws(Rec) == "",
+    species_label = ifelse(Species == "STEHIR", "Common Tern", "Little Tern")
+  )
+```
+
+# Building the spring-adult groups
+
+Identical construction to issue #5 task 3 / `03_mass_trends.Rmd`:
+confirmed breeder = any spring-caught adult (new ringing or recapture) also
+recorded in Jun/Jul of **any** year. `day_of_season` = days since March 1
+of that year (spring window = Mar-May, so this runs roughly 0-91).
+
+```{r groups}
+juvenile_ages <- c(1, 3)
+summer_ring_ids_anyyear <- terns %>%
+  filter(month %in% 6:7) %>%
+  distinct(ring_id) %>%
+  pull(ring_id)
+
+spring_adults <- terns %>%
+  filter(!(Age %in% juvenile_ages), !is.na(Weight), month %in% 3:5) %>%
+  mutate(
+    confirmed_breeder_anyyear = ring_id %in% summer_ring_ids_anyyear,
+    group = ifelse(confirmed_breeder_anyyear, "Adult breeder", "Adult non-breeder"),
+    group = factor(group, levels = c("Adult non-breeder", "Adult breeder")),
+    day_of_season = as.numeric(date - as.Date(paste0(year, "-03-01")))
+  )
+
+kable(
+  spring_adults %>% group_by(species_label, group) %>%
+    summarise(n = n(), n_years = n_distinct(year), .groups = "drop"),
+  caption = "Spring-adult weighed records by species and group"
+)
+```
+
+# 1. Does mass vary with day-of-season within spring?
+
+Individual-level `Weight ~ day_of_season` regression, per species and group.
+
+```{r within-season-mass}
+within_season_stats <- spring_adults %>%
+  group_by(species_label, group) %>%
+  filter(n() >= 10) %>%
+  group_modify(~ {
+    m <- lm(Weight ~ day_of_season, data = .x)
+    s <- summary(m)
+    tibble(
+      n = nrow(.x),
+      slope_g_per_day = round(coef(m)["day_of_season"], 4),
+      se = round(s$coefficients["day_of_season", "Std. Error"], 4),
+      p_value = signif(s$coefficients["day_of_season", "Pr(>|t|)"], 3),
+      r_squared = round(s$r.squared, 4)
+    )
+  }) %>%
+  ungroup()
+
+kable(within_season_stats, caption = "Weight ~ day_of_season, by species and group")
+```
+
+```{r within-season-plot}
+sig_ws <- within_season_stats %>% filter(p_value < 0.05) %>% distinct(species_label, group)
+spring_adults_sig <- spring_adults %>% semi_join(sig_ws, by = c("species_label", "group"))
+
+ggplot(spring_adults, aes(day_of_season, Weight, color = species_label)) +
+  geom_point(alpha = 0.15, size = 0.8) +
+  geom_smooth(data = spring_adults_sig, method = "lm", se = FALSE, linewidth = 0.9) +
+  facet_grid(group ~ species_label, scales = "free_y") +
+  guides(color = "none") +
+  labs(title = "Mass vs. day-of-season within the spring window (Mar-May)",
+       subtitle = "Trend line shown only where the day-of-season slope is significant (p<0.05)",
+       x = "Day of season (days since Mar 1)", y = "Weight (g)") +
+  theme_minimal()
+```
+
+# 2. Has the day-of-season of weighed birds shifted over the years?
+
+Individual-level `day_of_season ~ year` regression, per species and group -
+tests whether recent years' weighed birds are caught systematically
+earlier or later in the spring window than early years'.
+
+```{r date-shift-stats}
+date_shift_stats <- spring_adults %>%
+  group_by(species_label, group) %>%
+  filter(n() >= 10, n_distinct(year) >= 3) %>%
+  group_modify(~ {
+    m <- lm(day_of_season ~ year, data = .x)
+    s <- summary(m)
+    tibble(
+      n = nrow(.x),
+      n_years = n_distinct(.x$year),
+      slope_days_per_year = round(coef(m)["year"], 3),
+      se = round(s$coefficients["year", "Std. Error"], 3),
+      p_value = signif(s$coefficients["year", "Pr(>|t|)"], 3)
+    )
+  }) %>%
+  ungroup()
+
+kable(date_shift_stats, caption = "day_of_season ~ year, by species and group")
+```
+
+```{r date-shift-plot}
+sig_ds <- date_shift_stats %>% filter(p_value < 0.05) %>% distinct(species_label, group)
+spring_adults_sig_ds <- spring_adults %>% semi_join(sig_ds, by = c("species_label", "group"))
+
+ggplot(spring_adults, aes(year, day_of_season, color = species_label)) +
+  geom_point(alpha = 0.15, size = 0.8) +
+  geom_smooth(data = spring_adults_sig_ds, method = "lm", se = FALSE, linewidth = 0.9) +
+  facet_grid(group ~ species_label, scales = "free_y") +
+  guides(color = "none") +
+  labs(title = "Day-of-season of weighed adults, by year",
+       subtitle = "Trend line shown only where the year slope is significant (p<0.05)",
+       x = "Year", y = "Day of season (days since Mar 1)") +
+  theme_minimal()
+```
+
+# 3. Could the date shift explain (or mask) the mass-decline trend?
+
+If mass changes by `beta` g per day-of-season (section 1), and the
+sampling date itself is shifting by `delta` days per year (section 2), the
+date shift alone would be expected to move the yearly mass average by
+`beta * delta` g/year - compare this implied contribution against the
+actual observed mass-decline slope from issue #5 task 3
+(`data_processed/mass_trends_stats.csv`, raw mass, breeder/non-breeder
+groups) to see whether the date shift works with the decline (would
+partly explain it) or against it (the true decline may be understated).
+
+```{r combine}
+observed_trend <- read.csv(file.path(proc_dir, "mass_trends_stats.csv")) %>%
+  filter(group %in% c("Adult breeder", "Adult non-breeder")) %>%
+  select(species_label, group, observed_slope_g_per_year = slope_g_per_year, observed_p = p_value)
+
+combined_check <- within_season_stats %>%
+  select(species_label, group, within_season_slope = slope_g_per_day, within_season_p = p_value) %>%
+  inner_join(
+    date_shift_stats %>% select(species_label, group, date_shift_slope = slope_days_per_year, date_shift_p = p_value),
+    by = c("species_label", "group")
+  ) %>%
+  mutate(implied_contribution_g_per_year = round(within_season_slope * date_shift_slope, 4)) %>%
+  inner_join(observed_trend, by = c("species_label", "group")) %>%
+  mutate(
+    pct_of_observed = round(100 * implied_contribution_g_per_year / observed_slope_g_per_year, 1),
+    direction = ifelse(sign(implied_contribution_g_per_year) == sign(observed_slope_g_per_year),
+                        "Same direction as decline (could partly explain it)",
+                        "Opposite direction (works against the decline - true effect may be understated)")
+  )
+
+kable(combined_check, digits = 4,
+      caption = "Implied contribution of the within-season date shift to the observed yearly mass trend")
+```
+
+## Interpretation
+
+`implied_contribution_g_per_year` is what you'd expect the date shift alone
+to contribute to the yearly mass trend, given the within-season mass
+pattern. Compare its sign and magnitude (`pct_of_observed`) to the actual
+observed slope: if it points the same direction and is a meaningful share
+of the observed slope, part of the reported decline could be a timing
+artifact. If it points the opposite direction, or is a trivial share, the
+observed decline is not explained by within-season timing drift - if
+anything, a same-sign-opposing effect means the true condition decline
+could be slightly *larger* than what's reported, since the timing shift is
+working against, not for, the observed pattern.
+
+# Save outputs
+
+```{r save-outputs}
+write.csv(within_season_stats, file.path(proc_dir, "spring_timing_within_season_stats.csv"), row.names = FALSE)
+write.csv(date_shift_stats, file.path(proc_dir, "spring_timing_date_shift_stats.csv"), row.names = FALSE)
+write.csv(combined_check, file.path(proc_dir, "spring_timing_combined_check.csv"), row.names = FALSE)
+cat("Wrote data_processed/spring_timing_within_season_stats.csv, spring_timing_date_shift_stats.csv, spring_timing_combined_check.csv\n")
+```

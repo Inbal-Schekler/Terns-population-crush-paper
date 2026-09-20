@@ -1,0 +1,5 @@
+"species_label","group","n","n_years","slope_days_per_year","se","p_value"
+"Common Tern","Adult non-breeder",1593,16,-1.432,0.07,1.12e-83
+"Common Tern","Adult breeder",490,16,-0.406,0.148,0.00635
+"Little Tern","Adult non-breeder",224,16,-1.206,0.172,3.01e-11
+"Little Tern","Adult breeder",184,14,-0.386,0.192,0.0462
