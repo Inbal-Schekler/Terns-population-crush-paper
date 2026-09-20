@@ -239,6 +239,11 @@ kable(trend_stats_display, escape = FALSE,
 
 # Visual comparison
 
+Trend lines are drawn only where that species/group/metric's year slope is
+significant (p<0.05, per the `trend_stats` table above) - a flat/absent line
+means no detectable trend, rather than implying a weak trend still worth
+drawing.
+
 ```{r trends-plot, fig.height=13}
 long_records <- combined_records %>%
   select(species_label, group, year, Weight, mass_ratio, smi) %>%
@@ -249,12 +254,19 @@ long_records <- combined_records %>%
          metric = factor(metric, levels = c("Raw mass (g)", "Mass/Wing ratio", "SMI (g, rescaled)")),
          panel_label = paste(group, species_label, sep = " - "))
 
+sig_combos <- trend_stats %>%
+  filter(p_value < 0.05) %>%
+  distinct(species_label, group, metric)
+
+long_records_sig <- long_records %>% semi_join(sig_combos, by = c("species_label", "group", "metric"))
+
 ggplot(long_records, aes(year, value, color = species_label)) +
   geom_point(alpha = 0.15, size = 0.8) +
-  geom_smooth(method = "lm", se = FALSE, linewidth = 0.8) +
+  geom_smooth(data = long_records_sig, method = "lm", se = FALSE, linewidth = 0.8) +
   facet_grid(panel_label ~ metric, scales = "free_y") +
   guides(color = "none") +
   labs(title = "Mass trend by year, metric, age class and breeding status",
+       subtitle = "Trend line shown only where the year slope is significant (p<0.05)",
        y = NULL, x = "Year") +
   theme_minimal() +
   theme(strip.text.y = element_text(angle = 0, size = 7), strip.text.x = element_text(size = 9))
