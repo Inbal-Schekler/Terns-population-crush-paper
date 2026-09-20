@@ -302,39 +302,50 @@ corrected for in any script.
     p=0.616, not significant, but likely underpowered (n=75 total,
     spread across 14 years).
 
-- **Issue #6 done (2026-09-20)**: `scripts/05_normalized_mass_trends.Rmd`
-  (renders to `output/05_normalized_mass_trends.html`). Per Yosef's
-  suggestion, re-ran issue #5 task 3's trend analysis using mass
-  normalized to wing chord length instead of raw mass, on the same 3
-  groups (Juvenile / Adult breeder / Adult non-breeder) per species. Two
+- **Issue #6 done (2026-09-20, updated same day)**:
+  `scripts/05_normalized_mass_trends.Rmd` (renders to
+  `output/05_normalized_mass_trends.html`). Per Yosef's suggestion, re-ran
+  issue #5 task 3's trend analysis using mass normalized to wing chord
+  length instead of raw mass. **Common Tern** split into Juvenile / Adult
+  breeder / Adult non-breeder as in task 3; **Little Tern adults kept as a
+  single unsplit `Adult` group** (not breeder/non-breeder) - per Inbal,
+  since #5 task 2 already found no significant mass difference between
+  Little Tern breeders and non-breeders, so splitting an already-small
+  sample here adds nothing (this matches the same choice made in #7). Two
   normalization methods computed side by side: **simple ratio**
   (`Weight/Wing`) and **SMI** (scaled mass index, Peig & Green 2009 -
   rescales each bird's mass to the group's mean wing length using an SMA
   slope fit per species x group on log-log axes). Also checked whether
   `Wing` itself trends over time per group, before normalizing.
-  - **Wing itself trends upward over time in non-breeders (both species,
-    p=0.0015 Common Tern, p=0.043 Little Tern) and marginally in
-    juveniles, but is flat in confirmed breeders** (p=0.70 Common Tern,
-    p=0.51 Little Tern). This matters: normalizing mass by a
-    wing-length that's itself drifting will change the apparent trend
-    more in non-breeders/juveniles than in breeders.
-  - **Result: this is exactly what happened, and it weakens the issue #5
-    headline finding.** Under raw mass, only breeders showed the
-    steepest decline and the year x group interaction was significant in
-    both species (Common Tern p=0.0086, Little Tern p=0.034 - breeders
-    decline meaningfully faster than the other groups). Under **both**
-    normalized metrics (ratio and SMI), that interaction is **no longer
-    significant** in either species (ratio: p=0.064 CT, p=0.55 LT; SMI:
-    p=0.17 CT, p=0.27 LT). The reason: normalization made the
-    non-breeder and juvenile declines *larger and newly significant*
-    (e.g. Common Tern juvenile SMI slope -0.29 g/year, p=0.0003, vs. raw
-    mass p=0.16 n.s.; non-breeder SMI p=1.6e-06 vs. raw p=0.007) - so all
-    three groups now decline together rather than breeders standing out.
-    Breeders themselves still decline significantly under every metric
-    (SMI: Common Tern -0.60 g/year p=2e-05, Little Tern -0.29 g/year
-    p=0.006) - it's specifically the *breeder-is-different-from-the-
-    others* claim that doesn't survive normalization, not the
-    "mass is declining" claim generally.
+  - **Wing itself trends upward over time in Common Tern non-breeders**
+    (p=0.0015) **and Little Tern adults** (p=0.044, driven mostly by the
+    non-breeder-like majority of that unsplit group) **and marginally in
+    juveniles, but is flat in Common Tern confirmed breeders** (p=0.70).
+    This matters: normalizing mass by a wing-length that's itself
+    drifting will change the apparent trend more in non-breeders/
+    juveniles than in true breeders.
+  - **Result: this weakens the issue #5 headline finding for Common
+    Tern specifically.** Under raw mass, Common Tern breeders showed the
+    steepest decline and the year x group interaction was significant
+    (p=0.0086 - breeders decline meaningfully faster than juveniles/
+    non-breeders). Under **both** normalized metrics, that interaction is
+    **no longer significant** (ratio p=0.064, SMI p=0.17). Reason:
+    normalization made the Common Tern non-breeder and juvenile declines
+    *larger and newly significant* (e.g. juvenile SMI slope -0.29 g/year,
+    p=0.0003, vs. raw p=0.16 n.s.; non-breeder SMI p=1.6e-06 vs. raw
+    p=0.007), so all three groups decline together rather than breeders
+    standing out. Breeders themselves still decline significantly under
+    every metric (SMI: -0.60 g/year, p=2e-05) - it's specifically the
+    *breeder-is-different* claim that doesn't survive, not "mass is
+    declining" generally.
+  - **Little Tern (unsplit Adult vs. Juvenile)**: the Juvenile-vs-Adult
+    interaction is significant under raw mass (p=0.018) but not under
+    either normalized metric (ratio p=0.44, SMI p=0.11) - same pattern as
+    Common Tern, normalization erases the interaction. The Adult group
+    itself declines significantly under every metric (raw -0.16 g/year
+    p=0.0044; ratio p=0.00027; SMI -0.28 g/year p=2.1e-05) - stronger and
+    more significant than either the old breeder-only or non-breeder-only
+    split, simply from the larger unsplit sample (n=406 vs. 182/224).
   - **Open interpretation question, not yet resolved**: is this telling
     us the raw-mass breeder-specific finding was partly a body-size
     artifact (i.e. wing-normalization is doing its job correctly and the
@@ -344,7 +355,9 @@ corrected for in any script.
     groups being compared against breeders (i.e. the ratio/SMI approach
     is the artifact here)? Worth discussing with Yosef - this is a
     genuine methods fork, not a bug, and changes which claim the paper
-    can make about breeders vs. the wider population.
+    can make about breeders vs. the wider population. See also #7's
+    finding that part of the Common Tern non-breeder decline itself may
+    be a sampling-timing artifact, which complicates this further.
   - Writes `data_processed/normalized_mass_records.csv` and
     `data_processed/normalized_mass_trends_stats.csv`.
 

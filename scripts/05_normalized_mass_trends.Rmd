@@ -38,9 +38,13 @@ individual's mass to what it would be at the group's mean wing length, using
 the SMA slope as the scaling exponent. Both are computed here, side by side,
 rather than picking one upfront.
 
-Same three groups as issue #5 task 3, per species: **Juvenile** (age 3,
-Jun-Aug), **Adult breeder** and **Adult non-breeder** (spring weight, task 2c
-any-year confirmed-breeder split).
+Same groups as issue #5 task 3: **Juvenile** (age 3, Jun-Aug) plus spring
+adults, split into **Adult breeder** / **Adult non-breeder** (task 2c
+any-year confirmed-breeder split) **for Common Tern only**. **Little Tern
+adults are kept as a single unsplit `Adult` group** - #5 task 2 found no
+significant mass difference between Little Tern breeders and non-breeders
+under either definition, so splitting an already-small sample here adds
+nothing.
 
 # Data loading
 
@@ -97,13 +101,17 @@ summer_ring_ids_anyyear <- terns %>%
 spring_adults_anyyear <- terns %>%
   filter(!(Age %in% juvenile_ages), !is.na(Weight), month %in% 3:5) %>%
   mutate(confirmed_breeder_anyyear = ring_id %in% summer_ring_ids_anyyear,
-         group = ifelse(confirmed_breeder_anyyear, "Adult breeder", "Adult non-breeder"))
+         group = case_when(
+           species_label == "Little Tern" ~ "Adult",
+           confirmed_breeder_anyyear ~ "Adult breeder",
+           TRUE ~ "Adult non-breeder"
+         ))
 
 combined_records_raw <- bind_rows(
   juvenile_records,
   spring_adults_anyyear %>% select(-confirmed_breeder_anyyear)
 ) %>%
-  mutate(group = factor(group, levels = c("Juvenile", "Adult non-breeder", "Adult breeder")))
+  mutate(group = factor(group, levels = c("Juvenile", "Adult", "Adult non-breeder", "Adult breeder")))
 
 n_before <- nrow(combined_records_raw)
 combined_records <- combined_records_raw %>% filter(!is.na(Wing))
