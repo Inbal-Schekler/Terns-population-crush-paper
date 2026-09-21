@@ -484,6 +484,34 @@ corrected for in any script.
   - Writes `data_processed/summer_chick_mass_records.csv` and
     `summer_chick_mass_trends_stats.csv`.
 
+- **Issue #10 done (2026-09-21)**:
+  `scripts/09_summer_adult_within_season.Rmd` (renders to
+  `output/09_summer_adult_within_season.html`). Re-asks #5 task 4's
+  within-season question (does adult mass change over the summer?) on
+  #8's better-covered summer-adult population (Jun-Jul or Jun-Aug, new
+  ringing + recapture, no breeder/non-breeder split) instead of the old
+  spring-confirmed-breeder population, which had no weighed data after
+  2023. Two window definitions run separately (Jun-Jul, Jun-Aug), each
+  with a pooled `Weight ~ day_of_season` regression and a
+  `day_of_season x year` interaction test.
+  - **Common Tern: mass increases significantly over the season, in both
+    windows** - Jun-Jul +0.074 g/day (p=0.0003); Jun-Aug +0.139 g/day
+    (p=1.5e-30, much stronger with the wider window/bigger n). Matches
+    #5 task 4's old finding (+0.14 g/day, p=0.0075) almost exactly in
+    magnitude, now far more significant thanks to the bigger sample.
+    **Interaction test: not significant for Jun-Jul (p=0.115) but
+    significant for Jun-Aug (p=0.0121)** - the within-season pattern is
+    fairly consistent across years through July, but gets less consistent
+    once August is included (see plot - a few years' August trajectories
+    diverge from the rest).
+  - **Little Tern: no significant pooled trend in either window**
+    (Jun-Jul p=0.094; Jun-Aug p=0.068, both weakly negative) - matches
+    #5 task 4's old finding (pooled -0.01 g/day, p=0.686) directionally.
+    Interaction test not significant for Jun-Jul (p=0.449), borderline
+    for Jun-Aug (p=0.0522).
+  - Writes `data_processed/summer_adult_within_season_pooled_stats.csv`
+    and `summer_adult_within_season_interaction_stats.csv`.
+
 ### Next session - pick up here
 - **Issue #9 interpretation note (2026-09-20, not yet written into the
   issue as analysis, just discussed)**: wing-length normalization makes

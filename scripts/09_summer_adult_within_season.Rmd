@@ -1,0 +1,219 @@
+---
+title: "Terns within-season (summer) adult mass trajectory"
+subtitle: "Issue #10 - follow-up to issue #8"
+date: "`r format(Sys.Date())`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                       fig.width = 9, fig.height = 5)
+library(readxl)
+library(dplyr)
+library(lubridate)
+library(tidyr)
+library(ggplot2)
+library(knitr)
+```
+
+# Background
+
+#5 task 4 asked whether adult mass changes over the course of the summer
+(early vs. late season), but used the old spring-confirmed-breeder
+population, which has no *weighed* within-season record after 2023 for
+either species - so it couldn't say anything about recent years.
+
+#8 established a better-covered population: adults caught **directly in
+the colony during summer** (new ringings + recaptures, no breeder/non-
+breeder split, since summer colony presence is itself the breeding
+evidence) - data through 2026 for Common Tern. This script re-asks the
+within-season question on that population, for **two window definitions**
+run separately: **Jun-Jul** (matches #8) and **Jun-Aug** (matches the
+chick window from #9, wider). For each window: is there a within-season
+mass pattern **in general** (pooled across years), and does that pattern
+**hold within each year on its own** (day-of-season x year interaction),
+or does it vary?
+
+# Data loading
+
+```{r load-data}
+raw_dir <- "../data_raw"
+if (!dir.exists(raw_dir)) raw_dir <- "data_raw"
+stopifnot(dir.exists(raw_dir))
+
+proc_dir <- "../data_processed"
+if (!dir.exists(proc_dir)) proc_dir <- "data_processed"
+
+out_dir <- "../output"
+if (!dir.exists(out_dir)) out_dir <- "output"
+
+ringing_path <- file.path(raw_dir, "ringing_data_raw.xlsx")
+stopifnot(file.exists(ringing_path))
+
+col_names_47 <- c(
+  "CR1","RingReplace","Rec","RingPrefix","RingNum","Species","Sex","Age","Wing","Weight",
+  "Date","Time","Place","Lat","Lon","Ringer","Country","Remarks","Net","CR2","Subsp","Tail","Head",
+  "Breeding","CP1","CP2","CP3","CP4","Colour","D","M","OrigDate","OrigCountry","OrigLat","OrigLon","OrigAge",
+  "OldCR1","OldCR2","OldCR3","OldMetal1","OldMetal2","OilHead","OilWings","OilUpperP","OilUnderP","OilLegs","OilSum"
+)
+raw <- read_excel(ringing_path, sheet = "Data", skip = 2, col_names = col_names_47)
+
+terns <- raw %>%
+  filter(Species %in% c("STEALB", "STEHIR")) %>%
+  mutate(
+    year = year(Date),
+    month = month(Date),
+    date = as.Date(Date),
+    is_new = is.na(Rec) | trimws(Rec) == "",
+    is_recap = trimws(Rec) == "R" & !is.na(Rec),
+    is_capture = is_new | is_recap,  # excludes foreign-scheme codes (distant reports, not in-hand)
+    species_label = ifelse(Species == "STEHIR", "Common Tern", "Little Tern")
+  )
+
+juvenile_ages <- c(1, 3)
+
+build_window <- function(months) {
+  terns %>%
+    filter(is_capture, !(Age %in% juvenile_ages), !is.na(Weight), month %in% months) %>%
+    # Date comes in as POSIXct from readxl, so a naive Date - Date
+    # subtraction returns a difftime in SECONDS, not days (bug caught in
+    # #5 task 4) - force both sides to Date class first.
+    mutate(day_of_season = as.numeric(date - as.Date(ymd(paste0(year, "-06-01")))))
+}
+```
+
+# Analysis function
+
+Reused identically for both window definitions below - pooled
+`Weight ~ day_of_season` regression per species, plus a
+`Weight ~ day_of_season * year` interaction test per species (does the
+within-season slope vary from year to year), plus a per-year visual
+(color-graded by year, following the convention from #5 task 4).
+
+```{r analysis-fn}
+format_pval <- function(p) {
+  ifelse(p < 0.001, formatC(p, format = "e", digits = 2), formatC(p, format = "f", digits = 3))
+}
+
+run_within_season <- function(df, window_label) {
+  pooled_stats <- df %>%
+    group_by(species_label) %>%
+    group_modify(~ {
+      m <- lm(Weight ~ day_of_season, data = .x)
+      s <- summary(m)
+      tibble(
+        n = nrow(.x),
+        n_years = n_distinct(.x$year),
+        slope_g_per_day = round(coef(m)["day_of_season"], 4),
+        se = round(s$coefficients["day_of_season", "Std. Error"], 4),
+        p_value = signif(s$coefficients["day_of_season", "Pr(>|t|)"], 3),
+        r_squared = round(s$r.squared, 4)
+      )
+    }) %>%
+    ungroup() %>%
+    mutate(window = window_label)
+
+  interaction_stats <- df %>%
+    group_by(species_label) %>%
+    filter(n_distinct(year) >= 3) %>%
+    group_modify(~ {
+      m <- lm(Weight ~ day_of_season * factor(year), data = .x)
+      a <- anova(m)
+      tibble(
+        n = nrow(.x),
+        n_years = n_distinct(.x$year),
+        interaction_p = signif(a["day_of_season:factor(year)", "Pr(>F)"], 3)
+      )
+    }) %>%
+    ungroup() %>%
+    mutate(window = window_label)
+
+  list(pooled = pooled_stats, interaction = interaction_stats, data = df %>% mutate(window = window_label))
+}
+
+make_season_plot <- function(df, window_label, x_breaks, x_labels) {
+  sig_species <- df %>%
+    distinct(species_label) %>%
+    pull(species_label)
+
+  ggplot(df, aes(day_of_season, Weight, color = year)) +
+    geom_jitter(width = 0.5, alpha = 0.35, size = 1) +
+    geom_smooth(aes(group = year), method = "lm", se = FALSE, linewidth = 0.4, alpha = 0.6) +
+    geom_smooth(color = "black", method = "lm", se = FALSE, linewidth = 1.1, linetype = "dashed") +
+    scale_color_viridis_c(name = "Year") +
+    scale_x_continuous(breaks = x_breaks, labels = x_labels) +
+    facet_wrap(~species_label, scales = "free_y") +
+    labs(title = paste0("Adult mass within season (", window_label, ")"),
+         subtitle = "Thin lines = per-year trend, dashed black = pooled trend",
+         x = "Date within season", y = "Weight (g)") +
+    theme_minimal()
+}
+```
+
+# Window 1: Jun-Jul (no August)
+
+```{r window-junjul}
+w_junjul <- build_window(6:7)
+kable(w_junjul %>% count(species_label, name = "n"), caption = "Jun-Jul adult weighed records by species")
+
+res_junjul <- run_within_season(w_junjul, "Jun-Jul")
+
+kable(res_junjul$pooled %>% select(-window), digits = 4,
+      caption = "Pooled Weight ~ day_of_season, Jun-Jul (all years combined)")
+
+kable(res_junjul$interaction %>% select(-window),
+      caption = "day_of_season x year interaction test, Jun-Jul (does the within-season slope vary by year?)")
+```
+
+```{r window-junjul-plot, fig.height=5}
+make_season_plot(w_junjul, "Jun-Jul", c(0, 30, 61), c("Jun 1", "Jul 1", "Jul 31"))
+```
+
+# Window 2: Jun-Aug (including August)
+
+```{r window-junaug}
+w_junaug <- build_window(6:8)
+kable(w_junaug %>% count(species_label, name = "n"), caption = "Jun-Aug adult weighed records by species")
+
+res_junaug <- run_within_season(w_junaug, "Jun-Aug")
+
+kable(res_junaug$pooled %>% select(-window), digits = 4,
+      caption = "Pooled Weight ~ day_of_season, Jun-Aug (all years combined)")
+
+kable(res_junaug$interaction %>% select(-window),
+      caption = "day_of_season x year interaction test, Jun-Aug (does the within-season slope vary by year?)")
+```
+
+```{r window-junaug-plot, fig.height=5}
+make_season_plot(w_junaug, "Jun-Aug", c(0, 30, 61, 91), c("Jun 1", "Jul 1", "Aug 1", "Aug 31"))
+```
+
+# Interpretation
+
+A significant pooled slope (first table in each window section) means
+mass systematically changes over the course of that window, averaged
+across all years. A significant `day_of_season x year` interaction means
+that pattern isn't consistent from year to year - some years may show a
+strong trend and others none, or even the opposite direction - so the
+pooled slope should be read as an average tendency, not something that
+holds every single year. A non-significant interaction means the pooled
+slope is a reasonably good summary of what happens within any given
+year's season on its own. Read both together with the per-year plot,
+which makes any single outlier year visually obvious (color-graded by
+year - a year that stands out from the rest is visible regardless of
+whether it's an early or recent year).
+
+# Save outputs
+
+```{r save-outputs}
+all_pooled <- bind_rows(res_junjul$pooled, res_junaug$pooled)
+all_interaction <- bind_rows(res_junjul$interaction, res_junaug$interaction)
+
+write.csv(all_pooled, file.path(proc_dir, "summer_adult_within_season_pooled_stats.csv"), row.names = FALSE)
+write.csv(all_interaction, file.path(proc_dir, "summer_adult_within_season_interaction_stats.csv"), row.names = FALSE)
+cat("Wrote data_processed/summer_adult_within_season_pooled_stats.csv and summer_adult_within_season_interaction_stats.csv\n")
+```

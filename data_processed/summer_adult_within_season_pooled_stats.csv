@@ -1,0 +1,5 @@
+"species_label","n","n_years","slope_g_per_day","se","p_value","r_squared","window"
+"Common Tern",1300,16,0.0741,0.0202,0.000258,0.0102,"Jun-Jul"
+"Little Tern",691,17,-0.0214,0.0128,0.0937,0.0041,"Jun-Jul"
+"Common Tern",1744,17,0.1389,0.0119,1.5e-30,0.073,"Jun-Aug"
+"Little Tern",790,17,-0.0144,0.0079,0.0678,0.0042,"Jun-Aug"
