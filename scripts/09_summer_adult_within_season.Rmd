@@ -135,20 +135,35 @@ run_within_season <- function(df, window_label) {
   list(pooled = pooled_stats, interaction = interaction_stats, data = df %>% mutate(window = window_label))
 }
 
-make_season_plot <- function(df, window_label, x_breaks, x_labels) {
-  sig_species <- df %>%
-    distinct(species_label) %>%
-    pull(species_label)
+# Year is a discrete quantity (16-17 distinct years), not a continuous one -
+# scale_color_viridis_d (not _c) gives each year its own color from the
+# viridis palette instead of implying a smooth gradient. The most recent
+# year is additionally drawn as a thick black line on top, since it's the
+# one most likely to get lost among 16 other overlapping lines/points but
+# is usually the one of most immediate interest.
+make_season_plot <- function(df, window_label, x_breaks, x_labels, show_points = TRUE) {
+  df <- df %>% mutate(year_f = factor(year))
+  latest_year <- max(df$year)
+  df_latest <- df %>% filter(year == latest_year)
 
-  ggplot(df, aes(day_of_season, Weight, color = year)) +
-    geom_jitter(width = 0.5, alpha = 0.35, size = 1) +
-    geom_smooth(aes(group = year), method = "lm", se = FALSE, linewidth = 0.4, alpha = 0.6) +
-    geom_smooth(color = "black", method = "lm", se = FALSE, linewidth = 1.1, linetype = "dashed") +
-    scale_color_viridis_c(name = "Year") +
+  p <- ggplot(df, aes(day_of_season, Weight, color = year_f))
+
+  if (show_points) {
+    p <- p + geom_jitter(width = 0.5, alpha = 0.35, size = 1)
+  }
+
+  p +
+    geom_smooth(aes(group = year_f), method = "lm", se = FALSE, linewidth = 0.5, alpha = 0.7) +
+    geom_smooth(color = "grey30", method = "lm", se = FALSE, linewidth = 1, linetype = "dashed") +
+    geom_smooth(data = df_latest, aes(x = day_of_season, y = Weight), inherit.aes = FALSE,
+                method = "lm", se = FALSE, color = "black", linewidth = 1.6) +
+    scale_color_viridis_d(name = "Year") +
     scale_x_continuous(breaks = x_breaks, labels = x_labels) +
     facet_wrap(~species_label, scales = "free_y") +
-    labs(title = paste0("Adult mass within season (", window_label, ")"),
-         subtitle = "Thin lines = per-year trend, dashed black = pooled trend",
+    labs(title = paste0("Adult mass within season (", window_label, ")",
+                         if (show_points) "" else " - trend lines only"),
+         subtitle = paste0(if (show_points) "Thin lines = per-year trend, " else "Per-year trend lines only (no raw points), ",
+                            "grey dashed = pooled trend, thick black = most recent year (", latest_year, ")"),
          x = "Date within season", y = "Weight (g)") +
     theme_minimal()
 }
@@ -173,6 +188,13 @@ kable(res_junjul$interaction %>% select(-window),
 make_season_plot(w_junjul, "Jun-Jul", c(0, 30, 61), c("Jun 1", "Jul 1", "Jul 31"))
 ```
 
+Same data, trend lines only (no raw points) - makes the most recent
+year's line (thick black) easier to pick out against the rest:
+
+```{r window-junjul-plot-lines, fig.height=5}
+make_season_plot(w_junjul, "Jun-Jul", c(0, 30, 61), c("Jun 1", "Jul 1", "Jul 31"), show_points = FALSE)
+```
+
 # Window 2: Jun-Aug (including August)
 
 ```{r window-junaug}
@@ -190,6 +212,12 @@ kable(res_junaug$interaction %>% select(-window),
 
 ```{r window-junaug-plot, fig.height=5}
 make_season_plot(w_junaug, "Jun-Aug", c(0, 30, 61, 91), c("Jun 1", "Jul 1", "Aug 1", "Aug 31"))
+```
+
+Same data, trend lines only (no raw points):
+
+```{r window-junaug-plot-lines, fig.height=5}
+make_season_plot(w_junaug, "Jun-Aug", c(0, 30, 61, 91), c("Jun 1", "Jul 1", "Aug 1", "Aug 31"), show_points = FALSE)
 ```
 
 # Interpretation
