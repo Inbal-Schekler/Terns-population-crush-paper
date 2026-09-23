@@ -553,6 +553,31 @@ corrected for in any script.
     opposite directions, matching the pooled Jun-Jul result. Writes
     `data_processed/summer_adult_within_season_junjul_peryear_slopes.csv`
     and `..._junjul_recent_vs_historical.csv`. Posted to issue #10.
+  - **Follow-up normalization (2026-09-23, same day)**: Inbal noted this
+    whole issue #10 analysis never wing-normalized mass, unlike #6/#8/#9.
+    Added ratio + SMI (same method, fit per species) throughout, both
+    windows: pooled/interaction tables, a within-season plot faceted by
+    metric x species, and extended the Jun-Jul per-year-slope +
+    recent-vs-historical test to all three metrics (on the same
+    Wing-available subset for direct comparability - raw-mass numbers in
+    that section differ very slightly, ~16 fewer records, from the
+    Weight-only table earlier in the script, by design).
+    **Common Tern's within-season increase holds and strengthens under
+    normalization, both windows. Little Tern stays non-significant under
+    all three metrics, both windows** - genuine null, not a
+    normalization artifact. Sign pattern (Jun-Jul, per-year): Common Tern
+    11/16 raw -> 13/16 both normalized (cleaner majority); Little Tern
+    11/17 raw -> 10/17 ratio -> 9/17 SMI (weaker, closer to even).
+    **Notable secondary finding**: Common Tern's significant Jun-Aug
+    day_of_season x year interaction (p=0.019, raw mass - years differ in
+    slope) disappears once normalized (ratio p=0.24, SMI p=0.89) -
+    suggests some of that year-to-year Jun-Aug raw-mass variability
+    reflects which body sizes got caught that year, not a real
+    condition-trajectory difference. Recent-vs-historical test: still no
+    significant difference under any metric (all 12 interaction p > 0.09,
+    closest is Little Tern last-3-years SMI at p=0.099) - normalizing
+    doesn't change the "no evidence of a recent shift" conclusion. Posted
+    to issue #10.
 
 ### Next session - pick up here
 - **Issue #9 interpretation note (2026-09-20, not yet written into the
