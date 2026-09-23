@@ -638,6 +638,41 @@ corrected for in any script.
     `.Rmd`/`output/` pairs (full reproducible detail).
 
 ### Next session - pick up here
+- **Open question from mass-decline summary review (2026-09-23)**: Inbal
+  questioned why the spring breeder-vs-migrant sample is small (n=485
+  Common Tern confirmed breeders, `docs/mass_decline_summary.md` Section
+  1). Verified the funnel: of 25,637 total spring adult *records*, only
+  2,083 (~8%) were ever weighed (Weight only exists for genuine in-hand
+  captures - most spring records are field resightings, not captures);
+  of those, 490 also have a June/July sighting somewhere in the 17-year
+  dataset (485 after also requiring Wing). Confirmed recaptures ARE
+  included in this pool (191 of 2083 weighed Common Tern spring records
+  are recaptures), matching issue #5 task 2c's original intent. Matches
+  `data_processed/confirmed_breeder_spring_mass.csv` exactly (490/184
+  Common/Little Tern) - not a new bug, this is the same number issue #5
+  already established.
+  - **Side finding, not yet acted on**: this same check surfaced that 64
+    weighed spring records (63 coded `Rec="F"`, 1 `"IL"`) are
+    foreign-ringed birds controlled in-hand by Yosef at Atlit - not new
+    ringings or Atlit recaptures, but per `data_raw/README.md`'s own
+    rule ("Weight only populated for genuine in-hand captures"), these
+    are legitimate captures and belong in the pool (and are correctly
+    included here, since Section 1's filter is just `!is.na(Weight)`,
+    no `is_new`/`is_recap` restriction).
+  - **Inconsistency to resolve, not yet fixed**: issues #8/#9/#10's
+    *summer* population definitions use `is_capture = is_new | is_recap`
+    (07/08/09's data-loading chunks), which **excludes** these same
+    foreign-code-but-weighed records - its inline comment assumes
+    foreign codes always mean "distant report, not in-hand," which the
+    README shows isn't true when Weight is present. Likely only a
+    handful of records spread across 17 years (immaterial to any
+    conclusion so far), but it's a real method inconsistency between the
+    spring analysis (correctly includes them) and every summer/chick
+    analysis (incorrectly excludes them). Next session: count how many
+    summer/chick records this affects per species/year, and decide
+    whether to fix `is_capture` to `is_new | is_recap | (!is.na(Weight))`
+    (or similar) across 07/08/09/10 for consistency - Inbal was asked
+    and hadn't decided yet when this session ended.
 - **Issue #9 interpretation note (2026-09-20, not yet written into the
   issue as analysis, just discussed)**: wing-length normalization makes
   more sense for chicks than it does for adults, for a different reason
