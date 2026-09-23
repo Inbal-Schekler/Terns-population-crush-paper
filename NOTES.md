@@ -519,6 +519,21 @@ corrected for in any script.
   points) per Inbal's request, so the per-year trend is readable without
   the scatter behind it; originals with points kept, not replaced. Posted
   to the issue as a follow-up comment.
+  - **Follow-up bug (2026-09-23, same day)**: Inbal noticed 2026 looked
+    like it had two different trends in the lines-only plot. Real bug -
+    the latest-year highlight (thick black) and the per-year colored line
+    were both fitting the same 2026 data and overlapping, creating a
+    false "diverging lines" impression at the line ends. Fixed by
+    excluding the latest year from the per-year colored-line layer (the
+    black highlight already represents it); 2026 no longer appears in the
+    color legend as a result.
+  - **Real finding surfaced by the same question**: 2026 Common Tern's
+    within-season slope flips sign between windows - Jun-Jul: -0.031
+    g/day (flat, p=0.78, n=82) vs. Jun-Aug: +0.098 g/day (p=0.058, n=102).
+    Not a bug - the 20 extra August records pull the trend from flat to
+    mildly positive. Confirms the Jun-Aug interaction test finding above
+    (p=0.0121): individual years' within-season slopes vary a lot once
+    August is included, and 2026 is a concrete example of that.
 
 ### Next session - pick up here
 - **Issue #9 interpretation note (2026-09-20, not yet written into the
