@@ -512,6 +512,14 @@ corrected for in any script.
   - Writes `data_processed/summer_adult_within_season_pooled_stats.csv`
     and `summer_adult_within_season_interaction_stats.csv`.
 
+- **Issue #10 plot fix (2026-09-23)**: the year legend on the within-season
+  plots used `scale_color_viridis_c` (continuous), misleading since year is
+  discrete (16-17 distinct years) - switched to `scale_color_viridis_d`.
+  Also added a second plot below each original (trend lines only, no raw
+  points) per Inbal's request, so the per-year trend is readable without
+  the scatter behind it; originals with points kept, not replaced. Posted
+  to the issue as a follow-up comment.
+
 ### Next session - pick up here
 - **Issue #9 interpretation note (2026-09-20, not yet written into the
   issue as analysis, just discussed)**: wing-length normalization makes
