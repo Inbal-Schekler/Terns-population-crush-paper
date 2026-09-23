@@ -1,0 +1,5 @@
+"label","metric","latest_year","n_latest","n_other","mean_latest","trend_predicted","deviation","p_value"
+"Common Tern","Mass/Wing ratio",2026,9,476,0.4602,0.4155,0.0447,0.000282
+"Common Tern","SMI (g, rescaled)",2026,9,476,126.6027,113.3101,13.2926,0.00176
+"Little Tern","Mass/Wing ratio",2026,10,396,0.2822,0.252,0.0301,2.47e-05
+"Little Tern","SMI (g, rescaled)",2026,10,396,47.483,43.7859,3.697,0.0152

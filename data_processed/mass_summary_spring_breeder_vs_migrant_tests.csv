@@ -1,0 +1,5 @@
+"species_label","metric","n_breeder","n_migrant","mean_breeder","mean_migrant","pooled_t_p","year_controlled_effect","year_controlled_p"
+"Common Tern","Mass/Wing ratio",485,1593,0.435,0.4479,2.14e-11,0.0125,1.6e-11
+"Common Tern","SMI (g, rescaled)",485,1593,121.4537,122.7417,0.0593,0.908,0.171
+"Little Tern","Mass/Wing ratio",182,224,0.2643,0.2655,0.562,-7e-04,0.735
+"Little Tern","SMI (g, rescaled)",182,224,46.313,46.5566,0.595,-0.1969,0.675

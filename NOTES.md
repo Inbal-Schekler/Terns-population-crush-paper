@@ -593,6 +593,50 @@ corrected for in any script.
     combined label whenever every panel in a species x metric (or similar
     2-factor) grid needs its own independent range.**
 
+- **Mass-decline cross-issue summary (2026-09-23, new session)**:
+  `scripts/10_mass_decline_summary.Rmd` (renders to
+  `output/10_mass_decline_summary.html`), plus a narrative version with
+  embedded plots at `docs/mass_decline_summary.md`. Inbal asked for one
+  place pulling together every mass result across issues #5-#10,
+  **normalized (ratio + SMI) only**, each with a sample-size table, a
+  significance table, and a test of whether the most recent year
+  deviates from the historical trend.
+  - **Spring breeders vs. migrants** (issue #5 task 2c's definition,
+    never normalized before): Common Tern breeders significantly lighter
+    under ratio (p=2.1e-11) but **not under SMI (p=0.06-0.17)** - because
+    breeders also have significantly shorter wings than migrants
+    (272.9mm vs 274.9mm, p=1.9e-08), a real body-size difference not
+    previously characterized. Little Tern: no difference under either
+    metric. Used a species-pooled SMI reference (not per-group) here
+    specifically because of this wing-length difference - see the
+    script's methodological note.
+  - **Spring breeder mass over years**: significant decline, both
+    species, both metrics (Common Tern SMI -0.60 g/yr p=2.1e-05; Little
+    Tern, no breeder split exists so all spring adults used, SMI -0.28
+    g/yr p=2.1e-05). **2026 is significantly ABOVE the declining trend
+    for both species/metrics** (e.g. Common Tern SMI +13.3g above
+    predicted, p=0.0018) - small n (9-10) but a clean, consistent signal,
+    worth watching in 2027.
+  - **Summer adult mass over years**: flat, no significant trend, either
+    species, either metric (p=0.10-0.45) - confirms issue #8's raw-mass
+    finding holds under normalization. **Little Tern's 2026 is
+    significantly above its own flat trend** (p=0.008-0.023) - a second,
+    independent "2026 looks good" signal on a different population than
+    the spring one above.
+  - **Within-season (Jun-Jul only, reused from issue #10)**: Common Tern
+    rises in 13/16 years (only 3/16 decrease); Little Tern falls in
+    9-10/17. Neither species' recent years differ significantly from
+    history (all p>0.09).
+  - **Chick mass over years**: significant decline, Common Tern only
+    (SMI p=0.0002); Little Tern null under both metrics, but that's
+    likely just sparse recent data (n=1 in 2025, zero in 2026), not
+    evidence of no decline. Common Tern's 2026 sits right on its
+    declining trend - not anomalous.
+  - Adds a new top-level `docs/` folder to the repo (didn't exist
+    before) - narrative summaries with embedded plots go here going
+    forward, distinct from `NOTES.md` (session log) and the per-issue
+    `.Rmd`/`output/` pairs (full reproducible detail).
+
 ### Next session - pick up here
 - **Issue #9 interpretation note (2026-09-20, not yet written into the
   issue as analysis, just discussed)**: wing-length normalization makes
