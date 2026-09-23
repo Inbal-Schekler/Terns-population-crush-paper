@@ -360,10 +360,23 @@ excluding the latest year, grey dashed = pooled trend, thick black =
 most recent year), now faceted by metric as well as species.
 
 ```{r normalized-plot-fn}
+# facet_grid(metric ~ species, scales="free_y") only frees the y-axis per
+# ROW, not per individual panel - Common Tern and Little Tern would share
+# one y-range within each metric row, which squashes Little Tern's much
+# smaller values (e.g. ~44g) against Common Tern's (e.g. ~115g) into an
+# unreadable sliver. facet_wrap on a combined species x metric label (same
+# approach as 08_summer_chick_mass_trends.Rmd) gives every one of the 6
+# panels its own independent y-scale instead.
+panel_levels_norm <- c("Common Tern - Raw mass (g)", "Little Tern - Raw mass (g)",
+                        "Common Tern - Mass/Wing ratio", "Little Tern - Mass/Wing ratio",
+                        "Common Tern - SMI (g, rescaled)", "Little Tern - SMI (g, rescaled)")
+
 make_season_plot_allmetrics <- function(df, window_label, x_breaks, x_labels, show_points = TRUE) {
   df_long <- df %>%
     pivot_longer(cols = c(Weight, mass_ratio, smi), names_to = "metric", values_to = "value") %>%
-    mutate(metric_label = relabel_metric(metric), year_f = factor(year))
+    mutate(metric_label = relabel_metric(metric),
+           panel_label = factor(paste(species_label, metric_label, sep = " - "), levels = panel_levels_norm),
+           year_f = factor(year))
 
   latest_year <- max(df_long$year)
   df_latest <- df_long %>% filter(year == latest_year)
@@ -379,7 +392,7 @@ make_season_plot_allmetrics <- function(df, window_label, x_breaks, x_labels, sh
                 method = "lm", se = FALSE, color = "black", linewidth = 1.3) +
     scale_color_viridis_d(name = "Year") +
     scale_x_continuous(breaks = x_breaks, labels = x_labels) +
-    facet_grid(metric_label ~ species_label, scales = "free_y") +
+    facet_wrap(~panel_label, ncol = 2, scales = "free_y") +
     labs(title = paste0("Adult mass within season (", window_label, "), raw + normalized",
                          if (show_points) "" else " - trend lines only"),
          subtitle = paste0(if (show_points) "Thin lines = per-year trend, " else "Per-year trend lines only (no raw points), ",
