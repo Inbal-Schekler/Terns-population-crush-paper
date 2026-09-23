@@ -578,6 +578,20 @@ corrected for in any script.
     closest is Little Tern last-3-years SMI at p=0.099) - normalizing
     doesn't change the "no evidence of a recent shift" conclusion. Posted
     to issue #10.
+  - **Follow-up plot fix (2026-09-23, same day)**: Inbal reported the
+    normalized-mass plots were unreadable ("can't see anything because
+    of the scale"). Real bug: `facet_grid(metric ~ species,
+    scales="free_y")` only frees the y-axis **per row**, not per
+    individual panel - Common Tern (~115g) and Little Tern (~44g) were
+    sharing one y-range within each metric row, squashing Little Tern to
+    a flat sliver. Fixed by switching to `facet_wrap` on a combined
+    species x metric panel label (same pattern `08_summer_chick_mass_
+    trends.Rmd` already uses for its 6-panel metric comparison plot),
+    which frees every panel independently. **General gotcha: facet_grid's
+    "free" scales are only free along the axis they're declared for, and
+    only within a row/column, not per cell - use facet_wrap with a
+    combined label whenever every panel in a species x metric (or similar
+    2-factor) grid needs its own independent range.**
 
 ### Next session - pick up here
 - **Issue #9 interpretation note (2026-09-20, not yet written into the
