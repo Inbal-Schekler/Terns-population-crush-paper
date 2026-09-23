@@ -225,6 +225,129 @@ Same data, trend lines only (no raw points):
 make_season_plot(w_junaug, "Jun-Aug", c(0, 30, 61, 91), c("Jun 1", "Jul 1", "Aug 1", "Aug 31"), show_points = FALSE)
 ```
 
+# Per-year slopes and recent-vs-historical test (Jun-Jul only)
+
+August can include passage migrants as well as the local breeding
+population, so this follow-up restricts to the Jun-Jul window only.
+
+## Per-year within-season slope
+
+Same Jun-Jul population as above, but fit separately per year instead of
+pooled, so each year's own within-season trend is visible on its own.
+Years with fewer than 5 weighed records are dropped (too few points to
+fit a meaningful line) - in practice this only drops 2025 for Common
+Tern, which has zero Jun-Jul records that year.
+
+```{r peryear-slopes}
+peryear_junjul <- w_junjul %>%
+  group_by(species_label, year) %>%
+  filter(n() >= 5) %>%
+  group_modify(~ {
+    m <- lm(Weight ~ day_of_season, data = .x)
+    s <- summary(m)
+    tibble(
+      n = nrow(.x),
+      slope_g_per_day = round(coef(m)["day_of_season"], 4),
+      se = round(s$coefficients["day_of_season", "Std. Error"], 4),
+      p_value = signif(s$coefficients["day_of_season", "Pr(>|t|)"], 3)
+    )
+  }) %>%
+  ungroup()
+
+kable(peryear_junjul, digits = 4,
+      caption = "Per-year Weight ~ day_of_season slope, Jun-Jul (years with n >= 5 only)")
+```
+
+```{r peryear-signs}
+kable(peryear_junjul %>%
+        group_by(species_label) %>%
+        summarise(n_years = n(), n_negative = sum(slope_g_per_day < 0),
+                  n_positive = sum(slope_g_per_day > 0), .groups = "drop"),
+      caption = "Sign of the per-year slope, Jun-Jul")
+```
+
+**Common Tern: 11 of 16 years positive** (mass tends to increase over
+Jun-Jul most years). **Little Tern: 11 of 17 years negative** (mass tends
+to decrease over Jun-Jul most years) - the opposite direction from
+Common Tern, matching the pooled Jun-Jul result above. Individual years
+are mostly not significant on their own (Common Tern: 2016, 2020, 2021,
+2024 are; Little Tern: none are) - year-to-year slope estimates are
+noisy, which is exactly why a pooled/interaction test (rather than
+eyeballing single-year lines) is needed to say anything about whether a
+given year, or the last few years, are actually different from the rest.
+
+## Is the most recent year (or last few years) different from the rest?
+
+**Method and why:** to test whether one group of years has a different
+within-season slope than the rest, the raw records are pooled and fit
+with `Weight ~ day_of_season * group`, where `group` is a 2-level factor
+(recent vs. everyone else). The `day_of_season:group` interaction
+coefficient is literally the difference in slope between the two groups,
+with its own standard error and p-value. This is preferred over treating
+the per-year slopes above as a small sample and asking whether the most
+recent one is an outlier in that sample (e.g. a z-score against the
+spread of slopes) - that approach would treat each year's slope as known
+exactly, when in fact most individual years are too noisy to trust on
+their own (see the p-value column above). Fitting on the pooled raw data
+instead lets years with more/cleaner data count for more, and is the
+same logic as the `day_of_season x year` interaction test used earlier
+in this script, just with `year` collapsed into two groups instead of
+kept as 17 separate levels.
+
+Two group definitions are tested: the single most recent year (2026) vs.
+all other years, and the last 3 years *with data* vs. earlier years
+("with data" rather than last 3 calendar years, since Common Tern has
+zero Jun-Jul records in 2025 - a calendar-year window would silently
+collapse that comparison to just 2 recent years for that species).
+
+```{r recent-vs-historical}
+test_recent_vs_rest <- function(df, group_years, group_label) {
+  d <- df %>%
+    mutate(group = factor(ifelse(year %in% group_years, "recent", "other"),
+                           levels = c("other", "recent")))
+  m <- lm(Weight ~ day_of_season * group, data = d)
+  s <- summary(m)
+  slope_other <- coef(m)["day_of_season"]
+  slope_diff <- coef(m)["day_of_season:grouprecent"]
+  tibble(
+    comparison = group_label,
+    n_recent = sum(d$group == "recent"),
+    n_other = sum(d$group == "other"),
+    slope_other = round(slope_other, 4),
+    slope_recent = round(slope_other + slope_diff, 4),
+    slope_diff = round(slope_diff, 4),
+    p_value = signif(s$coefficients["day_of_season:grouprecent", "Pr(>|t|)"], 3)
+  )
+}
+
+recent_tests <- bind_rows(
+  w_junjul %>% filter(species_label == "Common Tern") %>%
+    test_recent_vs_rest(2026, "Common Tern: 2026 vs. all other years"),
+  w_junjul %>% filter(species_label == "Common Tern") %>%
+    test_recent_vs_rest(c(2023, 2024, 2026), "Common Tern: last 3 yrs w/ data (2023, 2024, 2026) vs. earlier"),
+  w_junjul %>% filter(species_label == "Little Tern") %>%
+    test_recent_vs_rest(2026, "Little Tern: 2026 vs. all other years"),
+  w_junjul %>% filter(species_label == "Little Tern") %>%
+    test_recent_vs_rest(c(2024, 2025, 2026), "Little Tern: last 3 yrs w/ data (2024, 2025, 2026) vs. earlier")
+)
+
+kable(recent_tests, digits = 4,
+      caption = "Recent-years vs. historical within-season slope, Jun-Jul (day_of_season x group interaction test)")
+```
+
+**No significant difference for either species, under either definition
+of "recent"** (all four interaction p-values > 0.15). Despite 2026 (and
+the last few years) visually looking flat/down for Common Tern against a
+pooled upward historical trend, that gap is not statistically
+distinguishable from the year-to-year noise already present in the
+historical data - individual "ordinary" years swing from -0.29 to +0.50
+g/day (see per-year table above). This is a genuine null result rather
+than an underpowered one in an absolute sense - the "other years" side of
+each comparison has hundreds of records - but with only n=82 (Common
+Tern) / n=23 (Little Tern) on the "recent" side, a modest true shift
+could still be missed; read this as "no evidence of a recent shift," not
+"definitively no shift."
+
 # Interpretation
 
 A significant pooled slope (first table in each window section) means
@@ -248,5 +371,7 @@ all_interaction <- bind_rows(res_junjul$interaction, res_junaug$interaction)
 
 write.csv(all_pooled, file.path(proc_dir, "summer_adult_within_season_pooled_stats.csv"), row.names = FALSE)
 write.csv(all_interaction, file.path(proc_dir, "summer_adult_within_season_interaction_stats.csv"), row.names = FALSE)
-cat("Wrote data_processed/summer_adult_within_season_pooled_stats.csv and summer_adult_within_season_interaction_stats.csv\n")
+write.csv(peryear_junjul, file.path(proc_dir, "summer_adult_within_season_junjul_peryear_slopes.csv"), row.names = FALSE)
+write.csv(recent_tests, file.path(proc_dir, "summer_adult_within_season_junjul_recent_vs_historical.csv"), row.names = FALSE)
+cat("Wrote data_processed/summer_adult_within_season_pooled_stats.csv, summer_adult_within_season_interaction_stats.csv, summer_adult_within_season_junjul_peryear_slopes.csv and summer_adult_within_season_junjul_recent_vs_historical.csv\n")
 ```

@@ -1,0 +1,5 @@
+"comparison","n_recent","n_other","slope_other","slope_recent","slope_diff","p_value"
+"Common Tern: 2026 vs. all other years",82,1218,0.0797,-0.0314,-0.1111,0.305
+"Common Tern: last 3 yrs w/ data (2023, 2024, 2026) vs. earlier",174,1126,0.0845,0.0034,-0.0811,0.162
+"Little Tern: 2026 vs. all other years",23,668,-0.0192,-0.1008,-0.0816,0.455
+"Little Tern: last 3 yrs w/ data (2024, 2025, 2026) vs. earlier",42,649,-0.0186,-0.1073,-0.0887,0.189
