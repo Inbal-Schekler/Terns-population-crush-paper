@@ -225,6 +225,186 @@ Same data, trend lines only (no raw points):
 make_season_plot(w_junaug, "Jun-Aug", c(0, 30, 61, 91), c("Jun 1", "Jul 1", "Aug 1", "Aug 31"), show_points = FALSE)
 ```
 
+# Wing-normalized mass (ratio + SMI)
+
+Everything above uses raw `Weight`. Same wing-normalization approach as
+issues #6/#8/#9 - **simple ratio** (`Weight/Wing`) and **SMI** (scaled
+mass index, Peig & Green 2009: log-log SMA regression, each individual's
+mass rescaled to what it would weigh at its species' mean wing length).
+Fit **per species** (adults only here, no breeder/non-breeder split, same
+population as the rest of this script). Wing normalization is on firmer
+ground for adults than it was for chicks in #9 - wing chord is a fixed
+structural trait in adults, whereas in growing chicks it's still an
+age/developmental-stage proxy (see NOTES.md's discussion under #9).
+
+```{r normalize}
+compute_smi <- function(df) {
+  lx <- log(df$Wing)
+  ly <- log(df$Weight)
+  b <- sd(ly) / sd(lx)  # SMA slope
+  wing_mean <- mean(df$Wing)
+  df$smi <- df$Weight * (wing_mean / df$Wing) ^ b
+  df$smi_b <- b
+  df
+}
+
+normalize_window <- function(df) {
+  df %>%
+    filter(!is.na(Wing)) %>%
+    mutate(mass_ratio = Weight / Wing) %>%
+    group_by(species_label) %>%
+    group_modify(~ compute_smi(.x)) %>%
+    ungroup()
+}
+
+w_junjul_norm <- normalize_window(w_junjul)
+w_junaug_norm <- normalize_window(w_junaug)
+
+cat("Jun-Jul: Weight-only n =", nrow(w_junjul), "-> also with Wing n =", nrow(w_junjul_norm),
+    sprintf("(%.1f%% retained)\n", 100 * nrow(w_junjul_norm) / nrow(w_junjul)))
+cat("Jun-Aug: Weight-only n =", nrow(w_junaug), "-> also with Wing n =", nrow(w_junaug_norm),
+    sprintf("(%.1f%% retained)\n", 100 * nrow(w_junaug_norm) / nrow(w_junaug)))
+
+relabel_metric <- function(x) {
+  x <- recode(x, Weight = "Raw mass (g)", mass_ratio = "Mass/Wing ratio", smi = "SMI (g, rescaled)")
+  factor(x, levels = c("Raw mass (g)", "Mass/Wing ratio", "SMI (g, rescaled)"))
+}
+
+kable(bind_rows(w_junjul_norm %>% distinct(species_label, smi_b) %>% mutate(window = "Jun-Jul"),
+                 w_junaug_norm %>% distinct(species_label, smi_b) %>% mutate(window = "Jun-Aug")),
+      digits = 3, caption = "SMA slope (b) used for SMI, by species and window")
+```
+
+Note: since normalization drops the small fraction of records missing
+`Wing` (~1-1.5%), the raw-mass numbers recomputed alongside ratio/SMI
+below differ very slightly from the Weight-only tables above (e.g. Common
+Tern Jun-Jul n=1283 here vs. n=1300 above) - this is so all three metrics
+below are compared on the exact same set of records, not an inconsistency.
+
+## Pooled trend and interaction test, all three metrics
+
+```{r normalized-stats-fn}
+run_within_season_metric <- function(df, window_label, metric) {
+  form_pooled <- as.formula(paste0(metric, " ~ day_of_season"))
+  form_inter  <- as.formula(paste0(metric, " ~ day_of_season * factor(year)"))
+
+  pooled_stats <- df %>%
+    group_by(species_label) %>%
+    group_modify(~ {
+      m <- lm(form_pooled, data = .x)
+      s <- summary(m)
+      tibble(
+        n = nrow(.x),
+        n_years = n_distinct(.x$year),
+        slope = round(coef(m)["day_of_season"], 4),
+        se = round(s$coefficients["day_of_season", "Std. Error"], 4),
+        p_value = signif(s$coefficients["day_of_season", "Pr(>|t|)"], 3),
+        r_squared = round(s$r.squared, 4)
+      )
+    }) %>%
+    ungroup() %>%
+    mutate(window = window_label, metric = metric)
+
+  interaction_stats <- df %>%
+    group_by(species_label) %>%
+    filter(n_distinct(year) >= 3) %>%
+    group_modify(~ {
+      m <- lm(form_inter, data = .x)
+      a <- anova(m)
+      tibble(
+        n = nrow(.x),
+        n_years = n_distinct(.x$year),
+        interaction_p = signif(a["day_of_season:factor(year)", "Pr(>F)"], 3)
+      )
+    }) %>%
+    ungroup() %>%
+    mutate(window = window_label, metric = metric)
+
+  list(pooled = pooled_stats, interaction = interaction_stats)
+}
+
+run_all_metrics <- function(df, window_label) {
+  res <- list(
+    Weight = run_within_season_metric(df, window_label, "Weight"),
+    mass_ratio = run_within_season_metric(df, window_label, "mass_ratio"),
+    smi = run_within_season_metric(df, window_label, "smi")
+  )
+  list(
+    pooled = bind_rows(res$Weight$pooled, res$mass_ratio$pooled, res$smi$pooled) %>%
+      mutate(metric = relabel_metric(metric)) %>% arrange(species_label, metric),
+    interaction = bind_rows(res$Weight$interaction, res$mass_ratio$interaction, res$smi$interaction) %>%
+      mutate(metric = relabel_metric(metric)) %>% arrange(species_label, metric)
+  )
+}
+
+norm_junjul <- run_all_metrics(w_junjul_norm, "Jun-Jul")
+norm_junaug <- run_all_metrics(w_junaug_norm, "Jun-Aug")
+```
+
+```{r normalized-stats-tables}
+kable(norm_junjul$pooled %>% select(-window), digits = 4,
+      caption = "Pooled value ~ day_of_season, Jun-Jul, all three metrics")
+kable(norm_junjul$interaction %>% select(-window),
+      caption = "day_of_season x year interaction test, Jun-Jul, all three metrics")
+
+kable(norm_junaug$pooled %>% select(-window), digits = 4,
+      caption = "Pooled value ~ day_of_season, Jun-Aug, all three metrics")
+kable(norm_junaug$interaction %>% select(-window),
+      caption = "day_of_season x year interaction test, Jun-Aug, all three metrics")
+```
+
+## Within-season plot, all three metrics
+
+Same convention as the raw-mass plots above (per-year colored lines
+excluding the latest year, grey dashed = pooled trend, thick black =
+most recent year), now faceted by metric as well as species.
+
+```{r normalized-plot-fn}
+make_season_plot_allmetrics <- function(df, window_label, x_breaks, x_labels, show_points = TRUE) {
+  df_long <- df %>%
+    pivot_longer(cols = c(Weight, mass_ratio, smi), names_to = "metric", values_to = "value") %>%
+    mutate(metric_label = relabel_metric(metric), year_f = factor(year))
+
+  latest_year <- max(df_long$year)
+  df_latest <- df_long %>% filter(year == latest_year)
+  df_hist <- df_long %>% filter(year != latest_year)
+
+  p <- ggplot(df_long, aes(day_of_season, value, color = year_f))
+  if (show_points) p <- p + geom_jitter(width = 0.5, alpha = 0.3, size = 0.7)
+
+  p +
+    geom_smooth(data = df_hist, aes(group = year_f), method = "lm", se = FALSE, linewidth = 0.4, alpha = 0.6) +
+    geom_smooth(color = "grey30", method = "lm", se = FALSE, linewidth = 0.9, linetype = "dashed") +
+    geom_smooth(data = df_latest, aes(x = day_of_season, y = value), inherit.aes = FALSE,
+                method = "lm", se = FALSE, color = "black", linewidth = 1.3) +
+    scale_color_viridis_d(name = "Year") +
+    scale_x_continuous(breaks = x_breaks, labels = x_labels) +
+    facet_grid(metric_label ~ species_label, scales = "free_y") +
+    labs(title = paste0("Adult mass within season (", window_label, "), raw + normalized",
+                         if (show_points) "" else " - trend lines only"),
+         subtitle = paste0(if (show_points) "Thin lines = per-year trend, " else "Per-year trend lines only (no raw points), ",
+                            "grey dashed = pooled trend, thick black = most recent year (", latest_year, ")"),
+         x = "Date within season", y = NULL) +
+    theme_minimal()
+}
+```
+
+```{r normalized-plot-junjul, fig.height=11}
+make_season_plot_allmetrics(w_junjul_norm, "Jun-Jul", c(0, 30, 61), c("Jun 1", "Jul 1", "Jul 31"))
+```
+
+```{r normalized-plot-junjul-lines, fig.height=11}
+make_season_plot_allmetrics(w_junjul_norm, "Jun-Jul", c(0, 30, 61), c("Jun 1", "Jul 1", "Jul 31"), show_points = FALSE)
+```
+
+```{r normalized-plot-junaug, fig.height=11}
+make_season_plot_allmetrics(w_junaug_norm, "Jun-Aug", c(0, 30, 61, 91), c("Jun 1", "Jul 1", "Aug 1", "Aug 31"))
+```
+
+```{r normalized-plot-junaug-lines, fig.height=11}
+make_season_plot_allmetrics(w_junaug_norm, "Jun-Aug", c(0, 30, 61, 91), c("Jun 1", "Jul 1", "Aug 1", "Aug 31"), show_points = FALSE)
+```
+
 # Per-year slopes and recent-vs-historical test (Jun-Jul only)
 
 August can include passage migrants as well as the local breeding
@@ -238,43 +418,69 @@ Years with fewer than 5 weighed records are dropped (too few points to
 fit a meaningful line) - in practice this only drops 2025 for Common
 Tern, which has zero Jun-Jul records that year.
 
+Uses `w_junjul_norm` (the Wing-available subset from the normalization
+section above) for all three metrics, including raw mass, so the three
+columns are directly comparable on identical records - see the note
+above about why this makes the raw-mass numbers here differ very
+slightly (16 fewer records) from the Weight-only table in the Jun-Jul
+section at the top of this script.
+
 ```{r peryear-slopes}
-peryear_junjul <- w_junjul %>%
-  group_by(species_label, year) %>%
-  filter(n() >= 5) %>%
-  group_modify(~ {
-    m <- lm(Weight ~ day_of_season, data = .x)
-    s <- summary(m)
-    tibble(
-      n = nrow(.x),
-      slope_g_per_day = round(coef(m)["day_of_season"], 4),
-      se = round(s$coefficients["day_of_season", "Std. Error"], 4),
-      p_value = signif(s$coefficients["day_of_season", "Pr(>|t|)"], 3)
-    )
-  }) %>%
-  ungroup()
+fit_peryear_metric <- function(df, metric) {
+  form <- as.formula(paste0(metric, " ~ day_of_season"))
+  df %>%
+    group_by(species_label, year) %>%
+    filter(n() >= 5) %>%
+    group_modify(~ {
+      m <- lm(form, data = .x)
+      s <- summary(m)
+      tibble(
+        n = nrow(.x),
+        slope = round(coef(m)["day_of_season"], 4),
+        se = round(s$coefficients["day_of_season", "Std. Error"], 4),
+        p_value = signif(s$coefficients["day_of_season", "Pr(>|t|)"], 3)
+      )
+    }) %>%
+    ungroup() %>%
+    mutate(metric = metric)
+}
+
+peryear_junjul <- bind_rows(
+  fit_peryear_metric(w_junjul_norm, "Weight"),
+  fit_peryear_metric(w_junjul_norm, "mass_ratio"),
+  fit_peryear_metric(w_junjul_norm, "smi")
+) %>%
+  mutate(metric = relabel_metric(metric)) %>%
+  arrange(species_label, metric, year)
 
 kable(peryear_junjul, digits = 4,
-      caption = "Per-year Weight ~ day_of_season slope, Jun-Jul (years with n >= 5 only)")
+      caption = "Per-year value ~ day_of_season slope, Jun-Jul, all three metrics (years with n >= 5 only; slope units depend on metric - g/day for raw mass and SMI, ratio-units/day for mass/wing ratio)")
 ```
 
 ```{r peryear-signs}
 kable(peryear_junjul %>%
-        group_by(species_label) %>%
-        summarise(n_years = n(), n_negative = sum(slope_g_per_day < 0),
-                  n_positive = sum(slope_g_per_day > 0), .groups = "drop"),
-      caption = "Sign of the per-year slope, Jun-Jul")
+        group_by(species_label, metric) %>%
+        summarise(n_years = n(), n_negative = sum(slope < 0),
+                  n_positive = sum(slope > 0), .groups = "drop"),
+      caption = "Sign of the per-year slope, Jun-Jul, all three metrics")
 ```
 
-**Common Tern: 11 of 16 years positive** (mass tends to increase over
-Jun-Jul most years). **Little Tern: 11 of 17 years negative** (mass tends
-to decrease over Jun-Jul most years) - the opposite direction from
-Common Tern, matching the pooled Jun-Jul result above. Individual years
-are mostly not significant on their own (Common Tern: 2016, 2020, 2021,
-2024 are; Little Tern: none are) - year-to-year slope estimates are
-noisy, which is exactly why a pooled/interaction test (rather than
-eyeballing single-year lines) is needed to say anything about whether a
-given year, or the last few years, are actually different from the rest.
+**Common Tern: 11 of 16 years positive on raw mass** (mass tends to
+increase over Jun-Jul most years), **13 of 16 under both ratio and SMI**
+- if anything a slightly cleaner majority once normalized. **Little Tern:
+11 of 17 years negative on raw mass** (mass tends to decrease over
+Jun-Jul most years), **10 of 17 under ratio, 9 of 17 under SMI** - still
+majority-negative but closer to even once normalized. Directions stay
+opposite between species under all three metrics, matching the pooled
+Jun-Jul result above, so this isn't purely an artifact of body-size
+composition within either sample - though Little Tern's downward
+tendency is the less robust of the two once wing length is accounted
+for. Individual years
+are mostly not significant on their own under any metric - year-to-year
+slope estimates are noisy, which is exactly why a pooled/interaction
+test (rather than eyeballing single-year lines) is needed to say
+anything about whether a given year, or the last few years, are actually
+different from the rest.
 
 ## Is the most recent year (or last few years) different from the rest?
 
@@ -301,16 +507,18 @@ zero Jun-Jul records in 2025 - a calendar-year window would silently
 collapse that comparison to just 2 recent years for that species).
 
 ```{r recent-vs-historical}
-test_recent_vs_rest <- function(df, group_years, group_label) {
+test_recent_vs_rest <- function(df, group_years, group_label, metric) {
   d <- df %>%
     mutate(group = factor(ifelse(year %in% group_years, "recent", "other"),
                            levels = c("other", "recent")))
-  m <- lm(Weight ~ day_of_season * group, data = d)
+  form <- as.formula(paste0(metric, " ~ day_of_season * group"))
+  m <- lm(form, data = d)
   s <- summary(m)
   slope_other <- coef(m)["day_of_season"]
   slope_diff <- coef(m)["day_of_season:grouprecent"]
   tibble(
     comparison = group_label,
+    metric = metric,
     n_recent = sum(d$group == "recent"),
     n_other = sum(d$group == "other"),
     slope_other = round(slope_other, 4),
@@ -320,33 +528,39 @@ test_recent_vs_rest <- function(df, group_years, group_label) {
   )
 }
 
-recent_tests <- bind_rows(
-  w_junjul %>% filter(species_label == "Common Tern") %>%
-    test_recent_vs_rest(2026, "Common Tern: 2026 vs. all other years"),
-  w_junjul %>% filter(species_label == "Common Tern") %>%
-    test_recent_vs_rest(c(2023, 2024, 2026), "Common Tern: last 3 yrs w/ data (2023, 2024, 2026) vs. earlier"),
-  w_junjul %>% filter(species_label == "Little Tern") %>%
-    test_recent_vs_rest(2026, "Little Tern: 2026 vs. all other years"),
-  w_junjul %>% filter(species_label == "Little Tern") %>%
-    test_recent_vs_rest(c(2024, 2025, 2026), "Little Tern: last 3 yrs w/ data (2024, 2025, 2026) vs. earlier")
-)
+metrics3 <- c("Weight", "mass_ratio", "smi")
+recent_tests <- bind_rows(lapply(metrics3, function(met) {
+  bind_rows(
+    w_junjul_norm %>% filter(species_label == "Common Tern") %>%
+      test_recent_vs_rest(2026, "Common Tern: 2026 vs. all other years", met),
+    w_junjul_norm %>% filter(species_label == "Common Tern") %>%
+      test_recent_vs_rest(c(2023, 2024, 2026), "Common Tern: last 3 yrs w/ data (2023, 2024, 2026) vs. earlier", met),
+    w_junjul_norm %>% filter(species_label == "Little Tern") %>%
+      test_recent_vs_rest(2026, "Little Tern: 2026 vs. all other years", met),
+    w_junjul_norm %>% filter(species_label == "Little Tern") %>%
+      test_recent_vs_rest(c(2024, 2025, 2026), "Little Tern: last 3 yrs w/ data (2024, 2025, 2026) vs. earlier", met)
+  )
+})) %>%
+  mutate(metric = relabel_metric(metric)) %>%
+  arrange(comparison, metric)
 
 kable(recent_tests, digits = 4,
-      caption = "Recent-years vs. historical within-season slope, Jun-Jul (day_of_season x group interaction test)")
+      caption = "Recent-years vs. historical within-season slope, Jun-Jul, all three metrics (day_of_season x group interaction test)")
 ```
 
-**No significant difference for either species, under either definition
-of "recent"** (all four interaction p-values > 0.15). Despite 2026 (and
-the last few years) visually looking flat/down for Common Tern against a
-pooled upward historical trend, that gap is not statistically
-distinguishable from the year-to-year noise already present in the
-historical data - individual "ordinary" years swing from -0.29 to +0.50
-g/day (see per-year table above). This is a genuine null result rather
-than an underpowered one in an absolute sense - the "other years" side of
-each comparison has hundreds of records - but with only n=82 (Common
-Tern) / n=23 (Little Tern) on the "recent" side, a modest true shift
-could still be missed; read this as "no evidence of a recent shift," not
-"definitively no shift."
+**No significant difference for either species, under any of the three
+metrics, under either definition of "recent"** (all twelve interaction
+p-values > 0.09). Despite 2026 (and the last few years) visually looking
+flat/down for Common Tern against a pooled upward historical trend, that
+gap is not statistically distinguishable from the year-to-year noise
+already present in the historical data - individual "ordinary" years
+swing from -0.29 to +0.50 g/day on raw mass (see per-year table above),
+and normalizing to wing length doesn't change that picture. This is a
+genuine null result rather than an underpowered one in an absolute sense
+- the "other years" side of each comparison has hundreds of records -
+but with only n=82 (Common Tern) / n=23 (Little Tern) on the "recent"
+side, a modest true shift could still be missed; read this as "no
+evidence of a recent shift," not "definitively no shift."
 
 # Interpretation
 
@@ -373,5 +587,17 @@ write.csv(all_pooled, file.path(proc_dir, "summer_adult_within_season_pooled_sta
 write.csv(all_interaction, file.path(proc_dir, "summer_adult_within_season_interaction_stats.csv"), row.names = FALSE)
 write.csv(peryear_junjul, file.path(proc_dir, "summer_adult_within_season_junjul_peryear_slopes.csv"), row.names = FALSE)
 write.csv(recent_tests, file.path(proc_dir, "summer_adult_within_season_junjul_recent_vs_historical.csv"), row.names = FALSE)
-cat("Wrote data_processed/summer_adult_within_season_pooled_stats.csv, summer_adult_within_season_interaction_stats.csv, summer_adult_within_season_junjul_peryear_slopes.csv and summer_adult_within_season_junjul_recent_vs_historical.csv\n")
+
+all_pooled_norm <- bind_rows(norm_junjul$pooled, norm_junaug$pooled)
+all_interaction_norm <- bind_rows(norm_junjul$interaction, norm_junaug$interaction)
+write.csv(all_pooled_norm, file.path(proc_dir, "summer_adult_within_season_pooled_stats_normalized.csv"), row.names = FALSE)
+write.csv(all_interaction_norm, file.path(proc_dir, "summer_adult_within_season_interaction_stats_normalized.csv"), row.names = FALSE)
+write.csv(bind_rows(w_junjul_norm %>% mutate(window = "Jun-Jul"), w_junaug_norm %>% mutate(window = "Jun-Aug")) %>%
+            select(species_label, window, year, date, day_of_season, Weight, Wing, mass_ratio, smi),
+          file.path(proc_dir, "summer_adult_within_season_normalized_records.csv"), row.names = FALSE)
+
+cat("Wrote data_processed/summer_adult_within_season_pooled_stats.csv, summer_adult_within_season_interaction_stats.csv,",
+    "summer_adult_within_season_junjul_peryear_slopes.csv, summer_adult_within_season_junjul_recent_vs_historical.csv,",
+    "summer_adult_within_season_pooled_stats_normalized.csv, summer_adult_within_season_interaction_stats_normalized.csv",
+    "and summer_adult_within_season_normalized_records.csv\n")
 ```

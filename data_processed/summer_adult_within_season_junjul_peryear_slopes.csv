@@ -1,34 +1,100 @@
-"species_label","year","n","slope_g_per_day","se","p_value"
-"Common Tern",2010,63,0.1227,0.1438,0.397
-"Common Tern",2011,122,0.0062,0.0492,0.9
-"Common Tern",2012,80,0.0119,0.0766,0.877
-"Common Tern",2013,42,-0.0231,0.1612,0.887
-"Common Tern",2014,53,0.2509,0.1321,0.0632
-"Common Tern",2015,51,0.2023,0.1255,0.114
-"Common Tern",2016,121,0.1125,0.051,0.0291
-"Common Tern",2017,119,0.0324,0.1065,0.761
-"Common Tern",2018,45,0.1498,0.1048,0.16
-"Common Tern",2019,81,-0.0175,0.1476,0.906
-"Common Tern",2020,205,0.1813,0.0574,0.00182
-"Common Tern",2021,58,-0.2937,0.14,0.0404
-"Common Tern",2022,86,0.1213,0.0734,0.102
-"Common Tern",2023,48,-0.1384,0.1559,0.379
-"Common Tern",2024,44,0.4991,0.2417,0.0451
-"Common Tern",2026,82,-0.0314,0.113,0.781
-"Little Tern",2010,63,-0.089,0.0576,0.127
-"Little Tern",2011,21,-0.0868,0.0637,0.189
-"Little Tern",2012,28,-0.0039,0.0661,0.953
-"Little Tern",2013,37,0.1139,0.0763,0.145
-"Little Tern",2014,58,0.0274,0.0498,0.584
-"Little Tern",2015,73,-0.0245,0.0416,0.557
-"Little Tern",2016,73,0.0086,0.0354,0.809
-"Little Tern",2017,58,-0.0357,0.0707,0.616
-"Little Tern",2018,49,-0.0355,0.0424,0.407
-"Little Tern",2019,45,-0.1059,0.0877,0.234
-"Little Tern",2020,62,0.0242,0.055,0.661
-"Little Tern",2021,14,-0.1186,0.0656,0.0955
-"Little Tern",2022,51,0.0184,0.0355,0.607
-"Little Tern",2023,17,-0.0984,0.0761,0.215
-"Little Tern",2024,11,0.3955,0.2281,0.117
-"Little Tern",2025,8,-0.0296,0.3199,0.929
-"Little Tern",2026,23,-0.1008,0.1732,0.567
+"species_label","year","n","slope","se","p_value","metric"
+"Common Tern",2010,62,0.1282,0.1444,0.378,"Raw mass (g)"
+"Common Tern",2011,121,0.0098,0.0496,0.843,"Raw mass (g)"
+"Common Tern",2012,79,0.017,0.077,0.826,"Raw mass (g)"
+"Common Tern",2013,38,-0.0234,0.1777,0.896,"Raw mass (g)"
+"Common Tern",2014,53,0.2509,0.1321,0.0632,"Raw mass (g)"
+"Common Tern",2015,51,0.2023,0.1255,0.114,"Raw mass (g)"
+"Common Tern",2016,117,0.1195,0.0513,0.0217,"Raw mass (g)"
+"Common Tern",2017,119,0.0324,0.1065,0.761,"Raw mass (g)"
+"Common Tern",2018,45,0.1498,0.1048,0.16,"Raw mass (g)"
+"Common Tern",2019,76,-0.0273,0.1441,0.85,"Raw mass (g)"
+"Common Tern",2020,204,0.1944,0.0578,0.000926,"Raw mass (g)"
+"Common Tern",2021,58,-0.2937,0.14,0.0404,"Raw mass (g)"
+"Common Tern",2022,86,0.1213,0.0734,0.102,"Raw mass (g)"
+"Common Tern",2023,48,-0.1384,0.1559,0.379,"Raw mass (g)"
+"Common Tern",2024,44,0.4991,0.2417,0.0451,"Raw mass (g)"
+"Common Tern",2026,82,-0.0314,0.113,0.781,"Raw mass (g)"
+"Common Tern",2010,62,5e-04,5e-04,0.351,"Mass/Wing ratio"
+"Common Tern",2011,121,1e-04,2e-04,0.429,"Mass/Wing ratio"
+"Common Tern",2012,79,3e-04,3e-04,0.339,"Mass/Wing ratio"
+"Common Tern",2013,38,3e-04,6e-04,0.642,"Mass/Wing ratio"
+"Common Tern",2014,53,9e-04,5e-04,0.0839,"Mass/Wing ratio"
+"Common Tern",2015,51,0.001,4e-04,0.0148,"Mass/Wing ratio"
+"Common Tern",2016,117,5e-04,2e-04,0.0021,"Mass/Wing ratio"
+"Common Tern",2017,119,0,4e-04,0.908,"Mass/Wing ratio"
+"Common Tern",2018,45,7e-04,4e-04,0.076,"Mass/Wing ratio"
+"Common Tern",2019,76,-3e-04,5e-04,0.595,"Mass/Wing ratio"
+"Common Tern",2020,204,8e-04,2e-04,0.000121,"Mass/Wing ratio"
+"Common Tern",2021,58,-0.0011,5e-04,0.0169,"Mass/Wing ratio"
+"Common Tern",2022,86,4e-04,3e-04,0.125,"Mass/Wing ratio"
+"Common Tern",2023,48,-1e-04,5e-04,0.859,"Mass/Wing ratio"
+"Common Tern",2024,44,0.0013,8e-04,0.0986,"Mass/Wing ratio"
+"Common Tern",2026,82,0,4e-04,0.917,"Mass/Wing ratio"
+"Common Tern",2010,62,0.1243,0.1509,0.413,"SMI (g, rescaled)"
+"Common Tern",2011,121,0.1044,0.0647,0.109,"SMI (g, rescaled)"
+"Common Tern",2012,79,0.1913,0.0967,0.0515,"SMI (g, rescaled)"
+"Common Tern",2013,38,0.2852,0.1993,0.161,"SMI (g, rescaled)"
+"Common Tern",2014,53,0.2329,0.1979,0.245,"SMI (g, rescaled)"
+"Common Tern",2015,51,0.437,0.1407,0.00314,"SMI (g, rescaled)"
+"Common Tern",2016,117,0.2049,0.0627,0.00142,"SMI (g, rescaled)"
+"Common Tern",2017,119,-0.0313,0.1313,0.812,"SMI (g, rescaled)"
+"Common Tern",2018,45,0.2692,0.1203,0.0305,"SMI (g, rescaled)"
+"Common Tern",2019,76,-0.1643,0.1611,0.311,"SMI (g, rescaled)"
+"Common Tern",2020,204,0.2615,0.0679,0.000159,"SMI (g, rescaled)"
+"Common Tern",2021,58,-0.3362,0.1678,0.05,"SMI (g, rescaled)"
+"Common Tern",2022,86,0.0881,0.0877,0.318,"SMI (g, rescaled)"
+"Common Tern",2023,48,0.201,0.1688,0.24,"SMI (g, rescaled)"
+"Common Tern",2024,44,0.0678,0.2236,0.763,"SMI (g, rescaled)"
+"Common Tern",2026,82,0.1007,0.1396,0.472,"SMI (g, rescaled)"
+"Little Tern",2010,63,-0.089,0.0576,0.127,"Raw mass (g)"
+"Little Tern",2011,21,-0.0868,0.0637,0.189,"Raw mass (g)"
+"Little Tern",2012,27,-0.0111,0.0689,0.873,"Raw mass (g)"
+"Little Tern",2013,37,0.1139,0.0763,0.145,"Raw mass (g)"
+"Little Tern",2014,57,0.0404,0.051,0.432,"Raw mass (g)"
+"Little Tern",2015,71,-0.0164,0.0424,0.7,"Raw mass (g)"
+"Little Tern",2016,71,0.012,0.0367,0.746,"Raw mass (g)"
+"Little Tern",2017,58,-0.0357,0.0707,0.616,"Raw mass (g)"
+"Little Tern",2018,48,-0.0129,0.0471,0.786,"Raw mass (g)"
+"Little Tern",2019,44,-0.1241,0.0902,0.176,"Raw mass (g)"
+"Little Tern",2020,62,0.0242,0.055,0.661,"Raw mass (g)"
+"Little Tern",2021,14,-0.1186,0.0656,0.0955,"Raw mass (g)"
+"Little Tern",2022,51,0.0184,0.0355,0.607,"Raw mass (g)"
+"Little Tern",2023,17,-0.0984,0.0761,0.215,"Raw mass (g)"
+"Little Tern",2024,11,0.3955,0.2281,0.117,"Raw mass (g)"
+"Little Tern",2025,8,-0.0296,0.3199,0.929,"Raw mass (g)"
+"Little Tern",2026,23,-0.1008,0.1732,0.567,"Raw mass (g)"
+"Little Tern",2010,63,-3e-04,3e-04,0.274,"Mass/Wing ratio"
+"Little Tern",2011,21,-3e-04,4e-04,0.477,"Mass/Wing ratio"
+"Little Tern",2012,27,-2e-04,3e-04,0.5,"Mass/Wing ratio"
+"Little Tern",2013,37,4e-04,4e-04,0.353,"Mass/Wing ratio"
+"Little Tern",2014,57,2e-04,3e-04,0.454,"Mass/Wing ratio"
+"Little Tern",2015,71,0,2e-04,0.829,"Mass/Wing ratio"
+"Little Tern",2016,71,1e-04,2e-04,0.721,"Mass/Wing ratio"
+"Little Tern",2017,58,-3e-04,4e-04,0.423,"Mass/Wing ratio"
+"Little Tern",2018,48,1e-04,3e-04,0.695,"Mass/Wing ratio"
+"Little Tern",2019,44,-7e-04,5e-04,0.187,"Mass/Wing ratio"
+"Little Tern",2020,62,3e-04,3e-04,0.312,"Mass/Wing ratio"
+"Little Tern",2021,14,-6e-04,5e-04,0.213,"Mass/Wing ratio"
+"Little Tern",2022,51,1e-04,2e-04,0.717,"Mass/Wing ratio"
+"Little Tern",2023,17,-4e-04,4e-04,0.309,"Mass/Wing ratio"
+"Little Tern",2024,11,0.002,0.0013,0.181,"Mass/Wing ratio"
+"Little Tern",2025,8,-4e-04,0.0017,0.832,"Mass/Wing ratio"
+"Little Tern",2026,23,-6e-04,0.001,0.559,"Mass/Wing ratio"
+"Little Tern",2010,63,-0.0074,0.0625,0.906,"SMI (g, rescaled)"
+"Little Tern",2011,21,0.0217,0.0785,0.785,"SMI (g, rescaled)"
+"Little Tern",2012,27,-0.0904,0.0612,0.152,"SMI (g, rescaled)"
+"Little Tern",2013,37,-0.0089,0.0967,0.928,"SMI (g, rescaled)"
+"Little Tern",2014,57,0.0323,0.0678,0.635,"SMI (g, rescaled)"
+"Little Tern",2015,71,0.0038,0.0462,0.934,"SMI (g, rescaled)"
+"Little Tern",2016,71,0.0162,0.0469,0.732,"SMI (g, rescaled)"
+"Little Tern",2017,58,-0.0846,0.0874,0.337,"SMI (g, rescaled)"
+"Little Tern",2018,48,0.0846,0.0722,0.247,"SMI (g, rescaled)"
+"Little Tern",2019,44,-0.1159,0.1105,0.3,"SMI (g, rescaled)"
+"Little Tern",2020,62,0.1161,0.0697,0.101,"SMI (g, rescaled)"
+"Little Tern",2021,14,-0.0989,0.134,0.475,"SMI (g, rescaled)"
+"Little Tern",2022,51,0.0077,0.0606,0.899,"SMI (g, rescaled)"
+"Little Tern",2023,17,-0.0364,0.0829,0.667,"SMI (g, rescaled)"
+"Little Tern",2024,11,0.2245,0.3159,0.495,"SMI (g, rescaled)"
+"Little Tern",2025,8,-0.142,0.3937,0.731,"SMI (g, rescaled)"
+"Little Tern",2026,23,-0.1143,0.201,0.576,"SMI (g, rescaled)"

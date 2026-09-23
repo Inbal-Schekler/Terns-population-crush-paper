@@ -1,5 +1,13 @@
-"comparison","n_recent","n_other","slope_other","slope_recent","slope_diff","p_value"
-"Common Tern: 2026 vs. all other years",82,1218,0.0797,-0.0314,-0.1111,0.305
-"Common Tern: last 3 yrs w/ data (2023, 2024, 2026) vs. earlier",174,1126,0.0845,0.0034,-0.0811,0.162
-"Little Tern: 2026 vs. all other years",23,668,-0.0192,-0.1008,-0.0816,0.455
-"Little Tern: last 3 yrs w/ data (2024, 2025, 2026) vs. earlier",42,649,-0.0186,-0.1073,-0.0887,0.189
+"comparison","metric","n_recent","n_other","slope_other","slope_recent","slope_diff","p_value"
+"Common Tern: 2026 vs. all other years","Raw mass (g)",82,1201,0.0832,-0.0315,-0.1147,0.29
+"Common Tern: 2026 vs. all other years","Mass/Wing ratio",82,1201,4e-04,0,-4e-04,0.368
+"Common Tern: 2026 vs. all other years","SMI (g, rescaled)",82,1201,0.1521,0.1007,-0.0514,0.693
+"Common Tern: last 3 yrs w/ data (2023, 2024, 2026) vs. earlier","Raw mass (g)",174,1109,0.0891,0.0034,-0.0857,0.14
+"Common Tern: last 3 yrs w/ data (2023, 2024, 2026) vs. earlier","Mass/Wing ratio",174,1109,4e-04,2e-04,-2e-04,0.313
+"Common Tern: last 3 yrs w/ data (2023, 2024, 2026) vs. earlier","SMI (g, rescaled)",174,1109,0.1481,0.1512,0.0031,0.965
+"Little Tern: 2026 vs. all other years","Raw mass (g)",23,660,-0.0169,-0.1008,-0.0839,0.443
+"Little Tern: 2026 vs. all other years","Mass/Wing ratio",23,660,-1e-04,-6e-04,-5e-04,0.394
+"Little Tern: 2026 vs. all other years","SMI (g, rescaled)",23,660,-0.0054,-0.1144,-0.109,0.429
+"Little Tern: last 3 yrs w/ data (2024, 2025, 2026) vs. earlier","Raw mass (g)",42,641,-0.0161,-0.1073,-0.0912,0.178
+"Little Tern: last 3 yrs w/ data (2024, 2025, 2026) vs. earlier","Mass/Wing ratio",42,641,-1e-04,-7e-04,-6e-04,0.109
+"Little Tern: last 3 yrs w/ data (2024, 2025, 2026) vs. earlier","SMI (g, rescaled)",42,641,-0.0037,-0.1445,-0.1408,0.0985
