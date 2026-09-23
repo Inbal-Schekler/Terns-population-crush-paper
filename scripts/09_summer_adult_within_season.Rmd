@@ -145,6 +145,11 @@ make_season_plot <- function(df, window_label, x_breaks, x_labels, show_points =
   df <- df %>% mutate(year_f = factor(year))
   latest_year <- max(df$year)
   df_latest <- df %>% filter(year == latest_year)
+  # Excluded from the per-year colored-line layer below so the latest year
+  # isn't drawn twice (once thin/colored, once thick/black) - the two lines
+  # are numerically identical (same data, same lm fit) but overlapping them
+  # made it look like two different trends at the line ends.
+  df_hist <- df %>% filter(year != latest_year)
 
   p <- ggplot(df, aes(day_of_season, Weight, color = year_f))
 
@@ -153,7 +158,7 @@ make_season_plot <- function(df, window_label, x_breaks, x_labels, show_points =
   }
 
   p +
-    geom_smooth(aes(group = year_f), method = "lm", se = FALSE, linewidth = 0.5, alpha = 0.7) +
+    geom_smooth(data = df_hist, aes(group = year_f), method = "lm", se = FALSE, linewidth = 0.5, alpha = 0.7) +
     geom_smooth(color = "grey30", method = "lm", se = FALSE, linewidth = 1, linetype = "dashed") +
     geom_smooth(data = df_latest, aes(x = day_of_season, y = Weight), inherit.aes = FALSE,
                 method = "lm", se = FALSE, color = "black", linewidth = 1.6) +
