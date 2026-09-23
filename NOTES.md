@@ -534,6 +534,25 @@ corrected for in any script.
     mildly positive. Confirms the Jun-Aug interaction test finding above
     (p=0.0121): individual years' within-season slopes vary a lot once
     August is included, and 2026 is a concrete example of that.
+  - **Follow-up analysis (2026-09-23, same day)**: Inbal asked to restrict
+    to Jun-Jul only (August can include passage migrants) and (a) list
+    the per-year within-season slope for each species/year, (b) formally
+    test whether the latest year, or last 3 years-with-data, differ from
+    history. Added to the script: per-year slope table (drops years with
+    n<5, i.e. just Common Tern 2025), and a `Weight ~ day_of_season *
+    group` interaction test (group = recent vs. rest) - chosen over
+    treating the noisy per-year point estimates as a sample to test the
+    latest one against, since that would ignore each year's own
+    uncertainty. **Result: no significant difference for either species,
+    under either "recent" definition (all 4 interaction p > 0.15)**,
+    despite Common Tern 2026 visually looking flat/down against a
+    pooled-up historical trend - not distinguishable from ordinary
+    year-to-year noise (individual years range -0.29 to +0.50 g/day).
+    Also confirms the sign pattern Inbal spotted visually: Common Tern
+    trends up in 11/16 years, Little Tern trends down in 11/17 years -
+    opposite directions, matching the pooled Jun-Jul result. Writes
+    `data_processed/summer_adult_within_season_junjul_peryear_slopes.csv`
+    and `..._junjul_recent_vs_historical.csv`. Posted to issue #10.
 
 ### Next session - pick up here
 - **Issue #9 interpretation note (2026-09-20, not yet written into the
