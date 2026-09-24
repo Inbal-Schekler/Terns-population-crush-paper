@@ -767,12 +767,27 @@ corrected for in any script.
   flag (full mechanism in NOTES.md's "Known issue" section above and
   `data_raw/README.md`). Confirmed again here: fixing it flips Little
   Tern's reported 2020 top model from "competition alone" (weight 0.46) to
-  "predation + competition + heat" (weight ~0.49, competition-alone 2nd at
-  ~0.30); Common Tern's result was already a near-tie across several
-  models (top weight ~0.21) and stays that way. Caveat unchanged from
-  Session 1: n=9 for the 2012-2020 block, so these weights are unstable -
-  still a bug-check result, not a paper-ready finding, and still not yet
-  sent back to Yosef.
+  **"competition + heat"** (weight 0.49, competition-alone 2nd at 0.30);
+  Common Tern's result was already a near 4-way tie (weights 0.12-0.21) and
+  stays that way. Caveat unchanged from Session 1: n=9 for the 2012-2020
+  block, so these weights are unstable - still a bug-check result, not a
+  paper-ready finding, and still not yet sent back to Yosef.
+  - Later the same day: wrote this all up properly in one file, per
+    Inbal's request - the scattered NOTES.md/`data_raw/README.md`/output-txt
+    version was "a lot of information in all of these places." New file:
+    `survival_analysis/yosef_analysis/YOSEF_2020_ANALYSIS.md` - exact
+    predictor definitions, every candidate model formula (pulled straight
+    from `GLM_2020_original.R`, not paraphrased), Yosef's original slide 10
+    & 12 numbers (pulled from the pptx XML directly, not the pptx file
+    itself - it was open in her own LibreOffice window at the time, so
+    converting it headless would have conflicted; unzipped and read the
+    slide XML instead), and the before/after AICc table for all 4
+    blocks/species. **Correction caught while sourcing the pptx text
+    directly**: this session's own note just above (and README.md's
+    pointer) had the fixed Little Tern top model wrong -
+    "predation + competition + heat" - the actual model.sel() output has
+    **no `predation` term** in that model at all (`hirTWOyears +
+    meanMAXtemp` only); fixed in both places.
 
 ### Next session - pick up here (survival analysis)
 - Not started yet: choosing the actual new/better parameter set for the

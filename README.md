@@ -38,18 +38,20 @@ mass_analysis/
   counting method, weather, predation/Newcastle-disease flags, and
   pre-breeding body mass. See NOTES.md for exactly which source each column
   comes from and which years are still missing data.
-- `survival_analysis/yosef_analysis/01_replicate_2020_baseline.R` - reproduces
-  Yosef's original 2020 GLM / AICc model-selection analysis (his original
-  script, kept alongside for reference: `GLM_2020_original.R`,
-  `plot_2020_original.R`) on the corrected dataset, as a sanity check before
-  extending or changing the modeling approach. See NOTES.md for the data bug
-  this corrects - fixing it flips Little Tern's reported top model from
-  "competition alone" to "predation + competition + heat" (n=9, weights
-  unstable at that sample size - a bug-check result, not yet a paper-ready
-  finding). Rendered result:
-  `survival_analysis/yosef_analysis/output/01_replication_results.txt`. This
-  is the starting point for choosing better parameters for the new survival
-  analysis, not the new analysis itself.
+- `survival_analysis/yosef_analysis/` - Yosef's original 2020 GLM / AICc
+  breeding-success analysis (`GLM_2020_original.R`, `plot_2020_original.R`,
+  reference only) plus our replication of it on the corrected dataset
+  (`01_replicate_2020_baseline.R`), as a sanity check before extending or
+  changing the modeling approach. **See
+  `survival_analysis/yosef_analysis/YOSEF_2020_ANALYSIS.md` for the full
+  writeup**: exactly which predictors/models he used, what he originally
+  reported, the data bug (full mechanism in NOTES.md/`data_raw/README.md`),
+  and the before/after AICc weights - fixing it flips Little Tern's top
+  model from "competition alone" (weight 0.46) to "competition + heat"
+  (weight 0.49, n=9 so unstable - a bug-check result, not yet paper-ready).
+  Raw output: `survival_analysis/yosef_analysis/output/01_replication_results.txt`.
+  This is the starting point for choosing better parameters for the new
+  survival analysis, not the new analysis itself.
 - `mass_analysis/scripts/02_mass_analysis.Rmd` - knittable report building and comparing
   three mass metrics from the raw ringing database
   (`data_raw/ringing_data_raw.xlsx`, local-only), issue #5 tasks 1-2 plus a
