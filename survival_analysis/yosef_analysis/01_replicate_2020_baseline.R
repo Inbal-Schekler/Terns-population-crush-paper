@@ -18,8 +18,15 @@ library(MuMIn)
 
 options(na.action = "na.fail")  # required by MuMIn::dredge/model.sel on model sets
 
-proc_dir <- "data_processed"
-if (!dir.exists(proc_dir)) proc_dir <- "../data_processed"
+# data_processed/ is shared with mass_analysis/ (also holds master_dataset,
+# which 02_mass_analysis.Rmd updates in place) - stays at the analysis root,
+# not nested under survival_analysis/. out_dir below tracks the same
+# candidate index so it resolves to a *local* output/ folder regardless of
+# which of these three succeeds.
+proc_candidates <- c("../../data_processed", "../data_processed", "data_processed")
+out_candidates  <- c("output", "yosef_analysis/output", "survival_analysis/yosef_analysis/output")
+proc_idx <- which(dir.exists(proc_candidates))[1]
+proc_dir <- proc_candidates[proc_idx]
 master <- read.csv(file.path(proc_dir, "master_dataset_2010_2026.csv"))
 
 # ------------------------------------------------------------------------
@@ -126,8 +133,8 @@ cat("\n\nCompare the top rows (delta < 2) above to סיכום 2020.pptx slides 1
 cat("2020 slide claimed for alb (Little Tern): interspecific competition alone, weight 0.46;\n")
 cat("competition + cold temp, weight 0.28. Check whether that holds with the corrected data.\n")
 
-out_dir <- sub("data_processed$", "output", proc_dir)
-dir.create(out_dir, showWarnings = FALSE)
+out_dir <- out_candidates[proc_idx]
+dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 sink(file.path(out_dir, "01_replication_results.txt"))
 cat("Block A - hir\n"); print(model.sel(models_hir_A[-1]))
 cat("\nBlock A - alb\n"); print(model.sel(models_alb_A[-1]))

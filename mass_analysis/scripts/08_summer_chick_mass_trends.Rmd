@@ -1,6 +1,6 @@
 ---
-title: "Terns summer (Jun-Jul) breeding-adult mass trends"
-subtitle: "Issue #8 - follow-up to issue #5 task 3 / #6 / #7"
+title: "Terns summer chick (juvenile) mass trends"
+subtitle: "Issue #9 - follow-up to issue #8"
 date: "`r format(Sys.Date())`"
 output:
   html_document:
@@ -22,28 +22,25 @@ library(knitr)
 
 # Background
 
-All mass-trend work so far (#5 task 3, #6, #7) used **spring-caught**
-adults, with "confirmed breeder" status requiring a separate Jun/Jul
-sighting of the same ring in any year - a strict definition that leaves a
-fairly small sample, especially in recent years (spring coverage collapsed
-to 1-4% of birds caught by 2024-2026, see #7).
-
-This script looks directly at adults caught **in the colony during the
-breeding season itself** (Jun-Jul). These are, by construction, all
-breeders - no non-breeder/passage-migrant ambiguity the way spring catches
-have - so **no breeder/non-breeder split is used**; per species this is a
-single "Summer adult" group. **Includes recaptures as well as new
-ringings** (previously issue #5 task 2 only used new ringings). Juveniles
-(age 3) are excluded, matching every other adult-mass metric in this repo.
+Same approach as #8, but for chicks: mass trend of this-year juveniles
+(EURING age 3) caught in the colony during summer, **including recaptures
+as well as new ringings** (previously #5 task 3 / #6 used new ringings
+only). Window is **Jun-Aug** (not Jun-Jul like #8's adults) - matches the
+juvenile window already established in #5 task 3 / #6, since juvenile
+catches remain substantial into August (Common Tern age-3 catches:
+Jun=106, Jul=1442, Aug=1049 - dropping August would discard a large,
+non-trivial share of the data).
 
 # Data loading
 
 ```{r load-data}
-raw_dir <- "../data_raw"
+raw_dir <- "../../data_raw"
+if (!dir.exists(raw_dir)) raw_dir <- "../data_raw"
 if (!dir.exists(raw_dir)) raw_dir <- "data_raw"
 stopifnot(dir.exists(raw_dir))
 
-proc_dir <- "../data_processed"
+proc_dir <- "../../data_processed"
+if (!dir.exists(proc_dir)) proc_dir <- "../data_processed"
 if (!dir.exists(proc_dir)) proc_dir <- "data_processed"
 
 out_dir <- "../output"
@@ -72,34 +69,33 @@ terns <- raw %>%
   )
 ```
 
-# Building the summer-adult group
+# Building the summer-chick group
 
 ```{r groups}
-juvenile_ages <- c(1, 3)
-summer_adults_raw <- terns %>%
-  filter(is_capture, !(Age %in% juvenile_ages), !is.na(Weight), month %in% 6:7) %>%
-  mutate(group = "Summer adult")
+summer_chicks_raw <- terns %>%
+  filter(is_capture, Age == 3, !is.na(Weight), month %in% 6:8) %>%
+  mutate(group = "Summer chick")
 
-n_before <- nrow(summer_adults_raw)
-summer_adults <- summer_adults_raw %>% filter(!is.na(Wing))
-n_after <- nrow(summer_adults)
+n_before <- nrow(summer_chicks_raw)
+summer_chicks <- summer_chicks_raw %>% filter(!is.na(Wing))
+n_after <- nrow(summer_chicks)
 
-cat("Jun-Jul adult records with Weight:", n_before, "- also with Wing:", n_after,
+cat("Jun-Aug age-3 records with Weight:", n_before, "- also with Wing:", n_after,
     sprintf("(%.1f%% retained)\n", 100 * n_after / n_before))
 ```
 
 ```{r coverage-table}
 kable(
-  summer_adults %>% group_by(species_label) %>%
+  summer_chicks %>% group_by(species_label) %>%
     summarise(n = n(), n_years = n_distinct(year),
               min_year = min(year), max_year = max(year), .groups = "drop"),
-  caption = "Summer-adult weighed records by species"
+  caption = "Summer-chick weighed records by species"
 )
 ```
 
 ```{r coverage-by-year}
 kable(
-  summer_adults %>% count(species_label, year, name = "n") %>%
+  summer_chicks %>% count(species_label, year, name = "n") %>%
     pivot_wider(names_from = species_label, values_from = n, values_fill = 0),
   caption = "Sample size by year and species"
 )
@@ -123,14 +119,14 @@ compute_smi <- function(df) {
   df
 }
 
-summer_adults <- summer_adults %>%
+summer_chicks <- summer_chicks %>%
   mutate(mass_ratio = Weight / Wing) %>%
   group_by(species_label) %>%
   group_modify(~ compute_smi(.x)) %>%
   ungroup()
 
 kable(
-  summer_adults %>% distinct(species_label, smi_b),
+  summer_chicks %>% distinct(species_label, smi_b),
   digits = 3, caption = "SMA slope (b) used for SMI, by species"
 )
 ```
@@ -162,9 +158,9 @@ fit_trend <- function(df, response) {
 }
 
 trend_stats <- bind_rows(
-  fit_trend(summer_adults, "Weight"),
-  fit_trend(summer_adults, "mass_ratio"),
-  fit_trend(summer_adults, "smi")
+  fit_trend(summer_chicks, "Weight"),
+  fit_trend(summer_chicks, "mass_ratio"),
+  fit_trend(summer_chicks, "smi")
 ) %>%
   mutate(metric = recode(metric, Weight = "Raw mass (g)",
                           mass_ratio = "Mass/Wing ratio",
@@ -193,7 +189,7 @@ and only drawn where the year slope is significant (p<0.05).
 panel_levels <- c("Common Tern - Raw mass (g)", "Common Tern - Mass/Wing ratio", "Common Tern - SMI (g, rescaled)",
                    "Little Tern - Raw mass (g)", "Little Tern - Mass/Wing ratio", "Little Tern - SMI (g, rescaled)")
 
-yearly_means <- summer_adults %>%
+yearly_means <- summer_chicks %>%
   pivot_longer(cols = c(Weight, mass_ratio, smi), names_to = "metric", values_to = "value") %>%
   mutate(metric = recode(metric, Weight = "Raw mass (g)",
                           mass_ratio = "Mass/Wing ratio",
@@ -202,7 +198,7 @@ yearly_means <- summer_adults %>%
   group_by(species_label, metric, panel_label, year) %>%
   summarise(mean_value = mean(value), n = n(), .groups = "drop")
 
-individual_long <- summer_adults %>%
+individual_long <- summer_chicks %>%
   pivot_longer(cols = c(Weight, mass_ratio, smi), names_to = "metric", values_to = "value") %>%
   mutate(metric = recode(metric, Weight = "Raw mass (g)",
                           mass_ratio = "Mass/Wing ratio",
@@ -230,7 +226,7 @@ ggplot(yearly_means, aes(year, mean_value, color = species_label)) +
   geom_text(data = label_pos, aes(y = y_label, label = n), size = 2.6, show.legend = FALSE) +
   facet_wrap(~panel_label, ncol = 3, scales = "free_y") +
   guides(color = "none") +
-  labs(title = "Summer (Jun-Jul) adult mass trend by year and metric",
+  labs(title = "Summer chick (Jun-Aug) mass trend by year and metric",
        subtitle = "Point = per-year mean; number below each point = sample size (n) that year. Trend line shown only where significant (p<0.05).",
        y = NULL, x = "Year") +
   theme_minimal()
@@ -239,8 +235,8 @@ ggplot(yearly_means, aes(year, mean_value, color = species_label)) +
 # Save outputs
 
 ```{r save-outputs}
-write.csv(summer_adults %>% select(-smi_b),
-          file.path(proc_dir, "summer_breeder_mass_records.csv"), row.names = FALSE)
-write.csv(trend_stats, file.path(proc_dir, "summer_breeder_mass_trends_stats.csv"), row.names = FALSE)
-cat("Wrote data_processed/summer_breeder_mass_records.csv and summer_breeder_mass_trends_stats.csv\n")
+write.csv(summer_chicks %>% select(-smi_b),
+          file.path(proc_dir, "summer_chick_mass_records.csv"), row.names = FALSE)
+write.csv(trend_stats, file.path(proc_dir, "summer_chick_mass_trends_stats.csv"), row.names = FALSE)
+cat("Wrote data_processed/summer_chick_mass_records.csv and summer_chick_mass_trends_stats.csv\n")
 ```

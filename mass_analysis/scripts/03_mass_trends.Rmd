@@ -40,11 +40,13 @@ age/breeding-status class, rather than the population as a whole.
 # Data loading
 
 ```{r load-data}
-raw_dir <- "../data_raw"
+raw_dir <- "../../data_raw"
+if (!dir.exists(raw_dir)) raw_dir <- "../data_raw"
 if (!dir.exists(raw_dir)) raw_dir <- "data_raw"
 stopifnot(dir.exists(raw_dir))
 
-proc_dir <- "../data_processed"
+proc_dir <- "../../data_processed"
+if (!dir.exists(proc_dir)) proc_dir <- "../data_processed"
 if (!dir.exists(proc_dir)) proc_dir <- "data_processed"
 
 out_dir <- "../output"

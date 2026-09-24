@@ -19,7 +19,9 @@ Copied from `Terns_Yosef_paper/re/` as received:
   (`איור השפעת שיטה על מספר זוגות.tiff`).
 - `GLM_2020_original.R`, `plot_2020_original.R` - Yosef's original 2020
   scripts, kept for reference/comparison only. Not run directly - superseded
-  by `scripts/01_replicate_2020_baseline.R`.
+  by `survival_analysis/yosef_analysis/01_replicate_2020_baseline.R`. Moved
+  out of `data_raw/` into `survival_analysis/yosef_analysis/` on 2026-09-24
+  (see "Session N" below) alongside that replication script.
 
 Not copied into this repo (left in the parent folder, reference only):
 `סיכום 2020.pptx`/`.pdf` (the 2020 season-summary talk, source of the 2020
@@ -48,7 +50,7 @@ block, are kept from `data1.csv`. The competition-lag terms
 (`hirTWOyears`/`albTWOyears`) are recomputed directly from the chick counts
 rather than trusted from either legacy file.
 
-`scripts/01_replicate_2020_baseline.R` reruns the original model set on the
+`survival_analysis/yosef_analysis/01_replicate_2020_baseline.R` reruns the original model set on the
 corrected data so we can see whether/how the reported top models change.
 Compare its output to `סיכום 2020.pptx` slides 10 and 12, which reported (on
 the buggy data):
@@ -727,3 +729,57 @@ corrected for in any script.
 - Issue #2 (lit review) not started - can run independently whenever.
 - Issue #4: still waiting on Yosef for the `סיכום טיבוע` 2026 column, and
   on the 2022 pairs gap.
+
+### Session 4 (2026-09-24)
+- Mass analysis (issues #5-#10) considered done for now, per Inbal - paused
+  there, see "Next session" above for exactly what's still open when it's
+  picked back up.
+- Switched focus to the general/survival analysis: reviewing Yosef's
+  original 2020 GLM/AICc breeding-success model, ahead of choosing better
+  parameters for a new version of it.
+- Reorganized the repo layout to separate the two analysis tracks, since it
+  had become a flat mix of both (Inbal: "it is already a mess"):
+  - New `survival_analysis/yosef_analysis/` - Yosef's original 2020 scripts
+    (`GLM_2020_original.R`, `plot_2020_original.R`, moved from `data_raw/`)
+    plus our bug-fixed replication of his analysis
+    (`01_replicate_2020_baseline.R`, moved from `scripts/`) and its output.
+  - New `mass_analysis/` - all issue #5-#10 `.Rmd` scripts, their rendered
+    output, and `docs/mass_decline_summary.md`, moved out of the flat
+    `scripts/`/`output/`/`docs/` folders.
+  - `data_raw/`, `data_processed/`, and `scripts/00_build_dataset.R` stay at
+    the repo root - genuinely shared by both analyses (`02_mass_analysis.Rmd`
+    updates `master_dataset_2010_2026.csv` in place, so it can't be
+    duplicated into a per-analysis copy without the two tracks drifting out
+    of sync).
+  - Fixed the relative-path fallback chains in every moved script so they
+    still resolve `data_raw`/`data_processed` correctly from their new,
+    one-level-deeper locations. Verified, not just eyeballed: reran
+    `01_replicate_2020_baseline.R` from both the repo root and its own new
+    directory - output byte-identical to the pre-move version both times -
+    and re-knit `04_within_season_mass.Rmd` from its new location, which
+    reproduced its committed output CSV exactly.
+  - Updated `README.md` (layout diagram, script descriptions, run commands)
+    and `data_raw/README.md` to point at the new locations.
+- Reviewed the replication result (`01_replication_results.txt`) with
+  Inbal - this is "the mistake" she remembered: `data1_2012-2020_legacy.csv`
+  has a one-column rotation bug in the temperature block, and `predation`
+  got overwritten with a duplicate temperature value instead of a yes/no
+  flag (full mechanism in NOTES.md's "Known issue" section above and
+  `data_raw/README.md`). Confirmed again here: fixing it flips Little
+  Tern's reported 2020 top model from "competition alone" (weight 0.46) to
+  "predation + competition + heat" (weight ~0.49, competition-alone 2nd at
+  ~0.30); Common Tern's result was already a near-tie across several
+  models (top weight ~0.21) and stays that way. Caveat unchanged from
+  Session 1: n=9 for the 2012-2020 block, so these weights are unstable -
+  still a bug-check result, not a paper-ready finding, and still not yet
+  sent back to Yosef.
+
+### Next session - pick up here (survival analysis)
+- Not started yet: choosing the actual new/better parameter set for the
+  survival analysis (the point of redoing it - see issue #2's literature
+  review, still not started, for what predictors are standard in the
+  field). This session was reorg + review only, no new modeling.
+- Issues #1/#3 block extending the GLM past 2020: still need weather/
+  predation/Newcastle for 2021-2026 and the density-index design from
+  Yosef (see "Open items" above) before a new model can use the full
+  2010-2026 window instead of being stuck at 2020 like the original.

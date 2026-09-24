@@ -273,19 +273,23 @@ script so it isn't a manual, easily-overwritten edit on the output file.
 
 ---
 
-## `GLM_2020_original.R`
+## `GLM_2020_original.R` and `plot_2020_original.R`
 
-Yosef's original 2020 modeling script. For both species, fits GLMs (gaussian
-family) on every candidate combination of predictors, then uses AIC
-(AICc, via `MuMIn::model.sel()`) to select the best-supported model(s).
-Uses `data.csv` for 2010-2020, then `data1.csv` for 2012-2020 (see that
-file's entry above for the bug this introduced).
+**Moved to `survival_analysis/yosef_analysis/` on 2026-09-24** - kept here in
+the file-by-file writeup for historical context since the bug documented
+above was found by reading them, but the files themselves now live with the
+rest of the survival-analysis work, not in `data_raw/`.
 
-## `plot_2020_original.R`
+`GLM_2020_original.R` is Yosef's original 2020 modeling script. For both
+species, fits GLMs (gaussian family) on every candidate combination of
+predictors, then uses AIC (AICc, via `MuMIn::model.sel()`) to select the
+best-supported model(s). Uses `data.csv` for 2010-2020, then `data1.csv` for
+2012-2020 (see that file's entry above for the bug this introduced).
 
-Produces the counting-method boxplot figure and runs the car-vs-tower
-significance test - see `data2_method_check_legacy.csv` above (not used in
-this paper).
+`plot_2020_original.R` produces the counting-method boxplot figure and runs
+the car-vs-tower significance test - see `data2_method_check_legacy.csv`
+above (not used in this paper; that CSV stays in `data_raw/`, only the two
+scripts moved).
 
 ---
 
@@ -354,11 +358,11 @@ implies a real capture regardless of who's listed as ringer.
 - Cols 37-41 (`Old colour rings`, `Old metal rings`) - previous ring code, for birds that had a ring replaced?
 - Cols 42-47 (`Oil (0-3)`: Head/Wings/UpperP/UnderP/Legs/Sum) - oil-contamination scoring by body region, fairly confident on this one.
 
-### Mass analysis (issue #5) - see `scripts/02_mass_analysis.Rmd`
+### Mass analysis (issue #5) - see `mass_analysis/scripts/02_mass_analysis.Rmd`
 
 All mass-metric work (tasks 1-2 plus a follow-up refinement) is
-consolidated in one knittable report, `scripts/02_mass_analysis.Rmd`
-(rendered: `output/02_mass_analysis.html`) - superseding the former
+consolidated in one knittable report, `mass_analysis/scripts/02_mass_analysis.Rmd`
+(rendered: `mass_analysis/output/02_mass_analysis.html`) - superseding the former
 `02_reverse_engineer_mass.R` / `03_breeding_mass.R` scripts (deleted).
 Summary of what it contains and found:
 
