@@ -10,6 +10,8 @@ Files in this folder:
 - `GLM_2020_original.R` / `plot_2020_original.R` - Yosef's original scripts, unedited (reference only, not runnable as-is - see `data_raw/README.md`)
 - `01_replicate_2020_baseline.R` - reruns his exact model set on the corrected data
 - `output/01_replication_results.txt` - full model-selection tables for every model below
+- `02_make_instability_figures.R` - generates the two figures below from the numbers in this doc
+- `output/figures/fig1_before_after_weights.png`, `output/figures/fig2_aicc_correction.png`
 
 ## 1. What the analysis was
 
@@ -22,6 +24,21 @@ by AICc (`MuMIn::model.sel()`). Following Yosef's own slides, a model is
 in the "supported" set if it falls within **ΔAICc < 2** of the best model
 - that's the threshold used throughout this document and in his original
 slides.
+
+**Two different numbers, don't conflate them**: `model.sel()`'s output
+table has both a `delta` column and a `weight` column - they're not the
+same thing, and only one of them has the "~2" rule of thumb.
+- `delta` (ΔAICc) is each model's AICc minus the best model's AICc. The
+  **<2 / 4-7 / >10** convention (Burnham & Anderson) applies to *this*
+  column - that's the actual "supported set" test used throughout this doc.
+- `weight` is derived from delta (∝ exp(-delta/2), normalized to sum to 1
+  **across whatever candidate set you fit**) - a relative-probability
+  share, not a fixed threshold. There's no equivalent "weight > 0.2 = good"
+  rule: with 23-27 candidates in the set, the true best model's weight gets
+  mechanically diluted just by there being more similar candidates to share
+  probability with, independent of how good the data actually is. The
+  weight numbers quoted below (e.g. "0.21", "0.46") are this second
+  quantity - useful for ranking, not a stand-alone bar to clear.
 
 **Two separate blocks, each with its own predictor set and time window**:
 
@@ -136,3 +153,50 @@ Little Tern is competition alone, now at 0.297 (close to its original
 weight, just no longer top). Common Tern's result was already an even
 split across 4 models and stays that way, just with `predation` correctly
 represented instead of silently duplicating a temperature value.
+
+![Before vs. after AICc weight for the same Block B formulas](output/figures/fig1_before_after_weights.png)
+
+## 5. Why the fix moved things this much: n=9-11 is very close to the edge
+
+This isn't just "bugs happen, always fix them" - the *size* of the swing
+above (e.g. Little Tern's 2nd model: weight 0.28 -> 0.01) is exactly what
+you'd expect from comparing ~9-27 candidate models against 9-11 rows, bug
+or no bug. Two compounding reasons, in order of how much they matter here:
+
+**1. Degrees of freedom.** A Gaussian GLM with `k` parameters costs the
+intercept, every predictor coefficient, *and* the residual variance -
+e.g. `hir ~ predation + newcastle + temp37` (3 predictor terms) is `k=5`.
+With n=11 (Block A) that leaves 6 residual df; with n=9 (Block B) a 4-term
+model (`k=6`) leaves 2. The standard heuristic - roughly **10 observations
+per estimated parameter** for stable OLS/GLM estimates - is violated by
+every model bigger than k=1 in this analysis.
+
+**2. AICc's own small-sample correction explodes at this n.** Plain AIC
+under-penalizes complexity when n isn't large relative to k, so AICc (what
+`model.sel()` actually computes) adds a correction term:
+
+&nbsp;&nbsp;&nbsp;&nbsp;`AICc = AIC + 2k(k+1) / (n-k-1)`
+
+This is small when n≫k - but `n-k-1` sits in the denominator, so as `k`
+approaches `n` the term doesn't grow, it **explodes**, and it's undefined
+once `k ≥ n-1`. Concretely, at n=11 the correction is already **12** for
+the largest Block A model (k=5) - bigger than the ΔAICc<2 threshold the
+whole comparison hinges on. At n=9, the largest Block B model (k=6) pays
+**42**. The same model size at a more typical ecological sample (n=50)
+would pay under 2. In other words: at this n, the "penalty for complexity"
+term isn't a small correction to the model's actual fit - it *dominates*
+the score, which is exactly why which model "wins" swings so hard on a
+single relabeled column.
+
+![AICc small-sample correction term vs. number of parameters, at n=9, n=11, and a reference n=50](output/figures/fig2_aicc_correction.png)
+
+**Implication for the new analysis**: capping candidate models at 3-4 terms
+(as Yosef did) was the right instinct given the data, but doesn't fully
+solve the problem - comparing a large candidate *set* (23-27 models) against
+9-11 rows is still aggressive relative to n, which is visible in how flat
+the weight distributions are even in the "before" numbers. Worth discussing
+before choosing the new analysis's model set: fewer, pre-specified
+candidates; reporting one model's effects with CIs instead of a ranked
+"winner"; and/or using the individual-level ringing data
+(`ringing_data_raw.xlsx`, 66,414 records) to get an n that isn't capped at
+one row per season.
