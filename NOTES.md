@@ -789,11 +789,93 @@ corrected for in any script.
     **no `predation` term** in that model at all (`hirTWOyears +
     meanMAXtemp` only); fixed in both places.
 
+### Session 5 (2026-09-28)
+- Reviewed `YOSEF_2020_ANALYSIS.md` with Inbal in detail - clarified two
+  things that were confusing at first read:
+  - **ΔAICc (the `delta` column, with the <2/4-7/>10 rule) vs. `weight`**
+    (∝ exp(-delta/2), normalized within whatever candidate set you fit -
+    no fixed "good" threshold, mechanically diluted by how many candidates
+    are in the set). Added a clarifying paragraph to §1 of the doc - this
+    had been a live source of confusion, worth keeping the distinction
+    explicit anywhere weight numbers get quoted going forward.
+  - **Why n=9-11 makes AICc model selection unstable, not just "small
+    sample = less power"**: AICc's own small-sample correction term,
+    `2k(k+1)/(n-k-1)`, explodes as k approaches n (undefined at k≥n-1).
+    At n=11 it's already 12 for Yosef's largest Block A model (k=5) -
+    bigger than the ΔAICc<2 threshold the whole comparison hinges on; at
+    n=9 it's 42 for the largest Block B model (k=6). Added as new §5 in
+    `YOSEF_2020_ANALYSIS.md`, with two generated figures
+    (`02_make_instability_figures.R` →
+    `output/figures/fig1_before_after_weights.png` - same formulas,
+    weight before/after the data1.csv bug fix; `fig2_aicc_correction.png`
+    - the correction term vs. k, at n=9/11/50, with Yosef's actual model
+    sizes marked). Committed + pushed (`e47e5f8`).
+- Looked at slide 13 of `סיכום 2020.pptx` (the interspecific-competition
+  plots, source of the `hirTWOyears`/`albTWOyears` predictor) at Inbal's
+  request. Extracted it via headless LibreOffice (needed a separate
+  `-env:UserInstallation` profile - the file was open in Inbal's own
+  LibreOffice at the time, and separately the snap sandbox blocks writing
+  outside `$HOME`) and saved as
+  `survival_analysis/yosef_analysis/reference/slide13_interspecific_competition.png`.
+  **Found a real discrepancy while checking it**: pulled the exact
+  `xVal`/`yVal` series out of the pptx's embedded chart XML (not eyeballed
+  off the image) - the x-axis (competitor's count 2 years prior) matches
+  `hirTWOyears`/`albTWOyears` in `master_dataset_2010_2026.csv` exactly,
+  but the y-axis ("מספר פרחונים" / number of fledglings) does **not**
+  match `chicks_hir`/`chicks_alb` (chicks ringed) - related but a
+  different metric, source undocumented anywhere in `data_raw/`. Opened
+  [issue #11](https://github.com/Inbal-Schekler/Terns-population-crush-paper/issues/11)
+  documenting the exact numbers side by side; decided (per Inbal) to use
+  the real ringing-count data (`chicks_hir`/`chicks_alb`) going forward,
+  not slide 13's plotted values.
+- Built `survival_analysis/01_extended_competition_plot.R` - reproduces
+  slide 13's two-panel competition plot but with `chicks_hir`/`chicks_alb`
+  as the response (per the issue #11 decision) and extended 2012-2026
+  (n=15; `hirTWOyears`/`albTWOyears` already went that far in
+  `master_dataset_2010_2026.csv`, nothing new needed there). Output:
+  `output/figures/fig3_competition_extended_2012_2026.png`.
+  **Real finding, not yet posted anywhere**: the two species diverge once
+  the new years are in.
+  - **Common Tern**: competition effect holds and gets *more* significant
+    with more data - slope basically unchanged (-1.77 -> -1.79), p:
+    0.098 (n.s.) -> **0.022**.
+  - **Little Tern**: competition effect **weakens substantially** - slope
+    less than half the original (-0.34 -> -0.16), r² 0.50 -> 0.22, p:
+    0.033 (sig.) -> **0.081 (n.s.)**. 2021/2022 sit well above the old
+    trend line - high Common Tern years that didn't come with a
+    correspondingly bad Little Tern year.
+  - **Not yet committed/pushed** (script + fig3 still local-only), and not
+    yet decided whether this belongs as a follow-up comment on #11 or a
+    new issue - #11 is about the response-variable *mismatch*, this is a
+    substantive result *using* the corrected response variable, arguably
+    separate. Left open for Inbal to decide next session.
+
 ### Next session - pick up here (survival analysis)
+- **Immediate**: decide where the Little Tern competition-weakening
+  finding goes (comment on #11 vs. new issue), then commit + push
+  `survival_analysis/01_extended_competition_plot.R` and
+  `output/figures/fig3_competition_extended_2012_2026.png`.
+- Continue the "return to what Yosef did, with the years passed" pass:
+  Block A (weather/predation/newcastle) and the mass-condition model
+  still only run 2010-2020/2012-2020 - same extension approach (real
+  data, not slide-reported numbers, full years where available) needed
+  there. Note issues #1/#3 still block the *weather/predation/Newcastle*
+  side specifically (no 2021-2026 values exist anywhere yet - needs
+  Yosef), so that part of Block A can't extend yet; competition and mass
+  terms aren't blocked by that and can proceed.
+- After the like-for-like extension is done: the bigger open question
+  from this session's earlier discussion (not yet acted on) - whether to
+  keep doing season-level AICc model selection at all (n=15 is still
+  small, same AICc small-sample issue as §5 describes, just less severe),
+  pre-register a small candidate set instead of a full combinatorial one,
+  and/or use the individual-level ringing data
+  (`ringing_data_raw.xlsx`, 66,414 records) for a proper capture-recapture
+  survival model if the analysis is meant to be about individual survival
+  rather than season-total chick counts.
 - Not started yet: choosing the actual new/better parameter set for the
   survival analysis (the point of redoing it - see issue #2's literature
   review, still not started, for what predictors are standard in the
-  field). This session was reorg + review only, no new modeling.
+  field).
 - Issues #1/#3 block extending the GLM past 2020: still need weather/
   predation/Newcastle for 2021-2026 and the density-index design from
   Yosef (see "Open items" above) before a new model can use the full
