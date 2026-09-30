@@ -4,19 +4,20 @@
 # fledging-success metric. Consistent with the finding there: his numbers are
 # always <= the raw/legacy ringing counts, never higher.
 #
-# Per Inbal: check ringing EFFORT - how many summer days did he actually ring
-# each species, regardless of whether he caught a chick that day - and
+# Per Inbal: check ringing EFFORT - how many summer days was the team out
+# ringing at all, regardless of whether a chick was caught that day - and
 # normalize the chick counts by it.
 #
 # Effort measure, from ringing_data_raw.xlsx ("Data" sheet):
-#   summer ringing days = distinct dates, June-August, with >=1 ringing
-#   record of that species - ANY age/status (adults + chicks, new captures +
-#   retraps), not just chick records. This is deliberately NOT "days a chick
-#   was ringed" (chick_ringing_days in the first version of this script) -
-#   that measure is circular, since by construction such a day always has
-#   >=1 chick in it, so it can only ever track the chick count, not measure
-#   independent field effort. What actually reflects effort is whether he
-#   was out ringing that species that day at all, chick caught or not.
+#   summer ringing days = distinct dates, June-August, with >=1 tern ringing
+#   record of EITHER species - ANY age/status (adults + chicks, new captures
+#   + retraps). Per Inbal: Little Tern and Common Tern are ringed at the same
+#   site on the same site visits, so effort is a single shared number, not
+#   two separate species-specific day counts - when he's out ringing, both
+#   species get the same effort that day.
+#   Deliberately NOT "days a chick was ringed" - that measure is circular,
+#   since by construction such a day always has >=1 chick in it, so it can
+#   only ever track the chick count, not measure independent field effort.
 #   June-August window chosen because 99.8% of all age==3 (chick) records
 #   fall in those 3 months (260 June + 1941 July + 1178 August + 3 September,
 #   checked across the full file) - i.e. it's the real breeding-season
@@ -48,57 +49,67 @@ records <- data.frame(
 ) %>%
   filter(species %in% c("STEALB", "STEHIR"), !is.na(year))
 
-# ---- summer (Jun-Aug) ringing days per year / species, ANY age/status -----
-summer_days <- records %>%
+# ---- total summer (Jun-Aug) ringing days per year, BOTH species pooled ----
+# One shared effort number: a day counts if either species was ringed that
+# day (same site visit covers both).
+ringing_days <- records %>%
   filter(month %in% 6:8) %>%
-  distinct(year, species, date) %>%
-  count(year, species, name = "n") %>%
-  mutate(species = recode(species, STEALB = "alb", STEHIR = "hir")) %>%
-  tidyr::pivot_wider(names_from = species, values_from = n, values_fill = 0,
-                      names_prefix = "summer_days_")
+  distinct(year, date) %>%
+  count(year, name = "ringing_days")
 
-# ---- bring in the chick counts, compute chicks-per-summer-ringing-day -----
+cat("Total summer (Jun-Aug) ringing days per year, both species pooled:\n")
+print(ringing_days)
+
+# ---- bring in the chick counts, compute chicks-per-ringing-day ------------
 chicks <- read.csv(file.path(proc_dir, "chicks_ringed_from_raw_2010_2026.csv"))
 
-effort <- summer_days %>%
+effort <- ringing_days %>%
   full_join(chicks, by = "year") %>%
   arrange(year) %>%
   mutate(
-    alb_per_day = round(chicks_alb / summer_days_alb, 2),
-    hir_per_day = round(chicks_hir / summer_days_hir, 2)
+    alb_per_day = round(chicks_alb / ringing_days, 2),
+    hir_per_day = round(chicks_hir / ringing_days, 2)
   )
 
-cat("Summer (Jun-Aug) ringing days and chicks-per-ringing-day, 2010-2026:\n")
-print(effort %>% select(year, summer_days_alb, chicks_alb, alb_per_day,
-                         summer_days_hir, chicks_hir, hir_per_day))
+cat("\nChicks per (shared) ringing day, 2010-2026:\n")
+print(effort %>% select(year, ringing_days, chicks_alb, alb_per_day,
+                         chicks_hir, hir_per_day))
 
-cat("\n=== Is summer ringing effort roughly steady across years? ===\n")
-summarize_var <- function(x, label) {
-  cat(sprintf("%s: mean=%.1f, sd=%.1f, CV=%.1f%%, range=%d-%d\n",
-              label, mean(x, na.rm = TRUE), sd(x, na.rm = TRUE),
-              100 * sd(x, na.rm = TRUE) / mean(x, na.rm = TRUE),
-              min(x, na.rm = TRUE), max(x, na.rm = TRUE)))
-}
-summarize_var(effort$summer_days_alb, "Little Tern summer ringing days/year")
-summarize_var(effort$summer_days_hir, "Common Tern summer ringing days/year")
+out_path <- file.path(proc_dir, "ringing_effort_by_year.csv")
+write.csv(effort, out_path, row.names = FALSE, na = "NA")
+cat("\nWrote", normalizePath(out_path), "\n")
+
+cat("\n=== Is total summer ringing effort roughly steady across years? ===\n")
+cat(sprintf("Ringing days/year: mean=%.1f, sd=%.1f, CV=%.1f%%, range=%d-%d\n",
+            mean(effort$ringing_days), sd(effort$ringing_days),
+            100 * sd(effort$ringing_days) / mean(effort$ringing_days),
+            min(effort$ringing_days), max(effort$ringing_days)))
 
 # ---- does the year-trend hold on the per-day rate, not just raw count? ----
-cat("\n=== Year trend: raw count vs. chicks-per-summer-ringing-day ===\n")
+cat("\n=== Year trend: raw count vs. chicks-per-ringing-day ===\n")
 for (sp in c("alb", "hir")) {
   raw_col <- paste0("chicks_", sp)
   rate_col <- paste0(sp, "_per_day")
   d <- effort[!is.na(effort[[rate_col]]) & is.finite(effort[[rate_col]]), ]
   ct_raw  <- cor.test(d$year, d[[raw_col]])
   ct_rate <- cor.test(d$year, d[[rate_col]])
-  cat(sprintf("%s: raw count r=%.3f p=%.4f  |  per-day rate r=%.3f p=%.4f\n",
-              sp, ct_raw$estimate, ct_raw$p.value, ct_rate$estimate, ct_rate$p.value))
+  cts_rate <- cor.test(d$year, d[[rate_col]], method = "spearman", exact = FALSE)
+  cat(sprintf("%s: raw count r=%.3f p=%.4f  |  per-day rate r=%.3f p=%.4f (Spearman rho=%.3f p=%.4f)\n",
+              sp, ct_raw$estimate, ct_raw$p.value, ct_rate$estimate, ct_rate$p.value,
+              cts_rate$estimate, cts_rate$p.value))
 }
 
-out_path <- file.path(proc_dir, "ringing_effort_by_year.csv")
-write.csv(effort, out_path, row.names = FALSE, na = "NA")
-cat("\nWrote", normalizePath(out_path), "\n")
+cat("\n=== Normality check on the per-day rates (residuals of rate ~ year) ===\n")
+for (sp in c("alb", "hir")) {
+  rate_col <- paste0(sp, "_per_day")
+  d <- effort[is.finite(effort[[rate_col]]), ]
+  m <- lm(d[[rate_col]] ~ d$year)
+  sw <- shapiro.test(resid(m))
+  cat(sprintf("%s_per_day residuals: W=%.3f, p=%.4f -> %s\n", sp, sw$statistic, sw$p.value,
+              ifelse(sw$p.value < 0.05, "NOT normal, prefer Spearman", "~normal, Pearson OK")))
+}
 
-# ---- final plot: chicks-per-summer-ringing-day, same slide-14 design -------
+# ---- final plot: chicks-per-ringing-day, same slide-14 design -------------
 library(ggplot2)
 out_dir <- "output/figures"
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
@@ -116,8 +127,8 @@ p <- ggplot(plot_data, aes(x = year, y = count)) +
   geom_point(aes(fill = species), shape = 21, size = 3, color = "grey20", stroke = 0.3) +
   facet_wrap(~species, scales = "free_y") +
   scale_fill_manual(values = species_colors, guide = "none") +
-  labs(title = "Chicks ringed per summer ringing day, 2010-2026",
-       subtitle = "Normalized for field effort: chicks_alb/hir ÷ distinct Jun-Aug ringing days for that species (any age/status)",
+  labs(title = "Chicks ringed per (shared) summer ringing day, 2010-2026",
+       subtitle = "Normalized for field effort: chicks_alb/hir ÷ total distinct Jun-Aug ringing days that season (both species pooled - same site visits)",
        x = "Year", y = "Chicks ringed per ringing day") +
   theme_minimal(base_size = 12) +
   theme(strip.text = element_text(face = "bold"),
