@@ -907,16 +907,81 @@ corrected for in any script.
   Yosef from seeing the issue at all - **made the repo public** (Inbal's
   choice, over adding Yosef as a private collaborator) to fix both at
   once. Inbal has emailed Yosef pointing at #12.
+- **Yosef replied on #12**: "from memory, I may have limited the analysis
+  to the minimum number of ringings in the year" - a guess, not a
+  confirmed source, but consistent with the finding (his numbers are
+  always <= ours, never higher).
+- Checked ringing EFFORT directly per Inbal, to see if it's a confound.
+  Took two wrong turns before landing on a real measure - both corrected
+  in place in `survival_analysis/05_ringing_effort_days.R` and documented
+  candidly in the issue #12 comment thread rather than hidden:
+  1. v1 counted *any* tern record as a day of effort - 60-90+ "days"/
+     season, absurd. Turned out `Rec` column's dominant value `R` (40,568
+     of 66,412 rows) is almost certainly passive resighting/colour-ring
+     reads, not physical capture - checked against a real email of
+     Yosef's actual 2025 ringing dates (7 nights) to confirm.
+  2. v2 restricted to blank-`Rec` (genuine new capture) but still split
+     by species - wrong per Inbal, since Little Tern and Common Tern are
+     ringed on the same site visits, so effort is one shared number, not
+     two.
+  3. Final: blank-`Rec`, any age, **both species pooled**, June-August,
+     with consecutive calendar dates merged into one "ringing night"
+     (ringing happens at night - a session crossing midnight splits
+     across two dates in the data otherwise). Gives 5-11 nights/season
+     (mean 7.6, CV 26%) - close to Yosef's real cadence once matched
+     against his email. **Known limitation**: a night with zero new
+     captures leaves no trace in this method, so the true count could be
+     slightly higher (Yosef's 7 vs. 6 reconstructed for 2025).
+  Normalizing (`chicks_per_ringing_night`) **reverses conclusions
+  reported earlier in this same thread** (the flawed v1/v2 versions) -
+  with the corrected measure: Common Tern's rise is real and gets
+  *stronger* once effort-corrected (p=0.019 Pearson / p=0.0044 Spearman);
+  Little Tern's decline weakens to borderline (p=0.090 Pearson, p=0.030
+  Spearman still holds). Inbal separately confirmed 2010 had 11 ringing
+  nights - tied for the *most* of any year, so it's not an under-effort
+  outlier; dropping it anyway (no non-effort justification found yet,
+  open question for Yosef) makes Little Tern's decline clearly
+  significant (p=0.016) and leaves Common Tern's rise borderline-to-solid
+  depending on the test (p=0.051 Pearson / p=0.017 Spearman).
+- Redid the **slide 13 interspecific-competition check** (issue #11) on
+  the effort-normalized scale (both predictor and response as chicks/
+  ringing-night) - `survival_analysis/06_competition_normalized.R`.
+  Replicates the raw-count story almost exactly: Little Tern's effect
+  significant in Yosef's 2012-2020 window (p=0.047), weakens once
+  extended to 2026 (p=0.189); Common Tern's effect not significant
+  originally (p=0.152), firms up extended (Spearman p=0.024). Posted as a
+  follow-up on #11, plus a by-year-labeled version matching `fig3`'s
+  original design (period-colored points, ggrepel year labels).
+- **Rebuilt `master_dataset_2010_2026.csv`** (per Inbal, ahead of moving
+  on to weather-parameter work): `scripts/00_build_dataset.R` now sources
+  `chicks_alb`/`chicks_hir` from `chicks_ringed_from_raw_2010_2026.csv`
+  (verified ground truth) instead of `summary_2026.xlsx`, and adds
+  `ringing_nights`, `alb_per_night`, `hir_per_night`,
+  `hirTWOyears_norm`/`albTWOyears_norm` (normalized values kept alongside
+  the raw ones, not replacing them, per Inbal - see
+  [[feedback-additive-analysis-iteration]]). `hirTWOyears`/`albTWOyears`
+  recomputed from the corrected chick counts, so a handful of values
+  shifted slightly (e.g. 2020 hir 242->241) to match the verified series.
+  **Gotcha**: `master_dataset_2010_2026.csv` isn't purely built by
+  `00_build_dataset.R` - `mass_analysis/scripts/02_mass_analysis.Rmd`
+  reads it back and overwrites `hirMASS`/`albMASS`/adds
+  `hirMASS_breed`/`albMASS_breed` afterward (full 2011-2026 spring-mass
+  source, not `00`'s 2012-2020-only legacy baseline). Rebuilding from `00`
+  alone silently reverts/drops those columns - re-ran `02_mass_analysis.Rmd`
+  immediately after to restore them; verified the rendered HTML and other
+  mass CSVs came out byte-identical to before (mass data itself didn't
+  change, only chick/effort columns did).
 
 ### Next session - pick up here (survival analysis)
-- **Immediate**: waiting on Yosef's reply on #12 - where did slide 13/14's
-  "מספר פרחונים" (number of fledglings) values actually come from? Once
-  known, decide whether `chicks_ringed_from_raw_2010_2026.csv` (or the
-  legacy file) should replace `chicks_hir`/`chicks_alb` in
-  `master_dataset_2010_2026.csv` (currently sourced from
-  `summary_2026.xlsx`) - not done yet, additive-only for now per usual
-  practice on this repo (keep candidate versions side by side until a
-  source is confirmed, don't overwrite).
+- **Immediate**: move on to the weather-parameter side of the model now
+  that the chick-count source is settled (raw+normalized, both in
+  `master_dataset_2010_2026.csv`). Still blocked at 2010-2020 for
+  `temp37/temp12/meanMAXtemp/meanMINtemp/rainMAY/rainJUN/predation/newcastle`
+  - issues #1/#3, needs Yosef.
+- Open question for Yosef, logged on #12: is there a non-effort reason to
+  treat 2010 specially (first season, methodology/coverage) - its ringing
+  effort was NOT unusually low, so that's not the explanation if 2010
+  ends up excluded.
 - Continue the "return to what Yosef did, with the years passed" pass:
   Block A (weather/predation/newcastle) and the mass-condition model
   still only run 2010-2020/2012-2020 - same extension approach (real
