@@ -118,4 +118,36 @@ ggsave(file.path(out_dir, "fig6b_competition_normalized_2012_2026.png"), pB,
        width = 9, height = 4.8, dpi = 200, bg = "white")
 cat("Wrote", file.path(out_dir, "fig6b_competition_normalized_2012_2026.png"), "\n")
 
+# --- Figure C: extended, with year labels per point - same design as the
+# first plot on this issue (fig3_competition_extended_2012_2026.png /
+# 01_extended_competition_plot.R): period-colored fill (grey = original,
+# green = new), blue trend + 95% CI ribbon for the full window, grey dashed
+# for the original-window-only trend, ggrepel year labels per point. -------
+pC <- ggplot(pb_data, aes(x = x, y = y)) +
+  geom_smooth(data = subset(pb_data, year <= 2020), aes(x = x, y = y),
+              method = "lm", se = FALSE, color = "grey55", linetype = "22",
+              linewidth = 0.8, inherit.aes = FALSE) +
+  geom_smooth(method = "lm", se = TRUE, color = "#2a78d6", fill = "#2a78d6",
+              alpha = 0.12, linewidth = 1) +
+  geom_point(aes(fill = period), shape = 21, size = 3.2, color = "white", stroke = 0.3) +
+  ggrepel::geom_text_repel(aes(label = year), size = 2.6, color = "grey35",
+                            max.overlaps = 20, seed = 1) +
+  facet_wrap(~species, scales = "free", ncol = 2) +
+  scale_fill_manual(values = c("2012-2020 (Yosef's years)" = "#898781",
+                                "2021-2026 (new)" = "#1baf7a")) +
+  labs(title = "Interspecific competition, effort-normalized, extended through 2026 - by year",
+       subtitle = paste0("x = other species' chicks/ringing-night, 2 yrs earlier | y = this species' chicks/ringing-night, this year\n",
+                          "Grey dashed = 2012-2020 trend only; blue = full 2012-2026 trend (shaded = 95% CI)."),
+       x = NULL, y = NULL, fill = "Period") +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "top",
+        strip.text = element_text(face = "bold"),
+        plot.title = element_text(face = "bold", size = 13),
+        plot.subtitle = element_text(color = "grey35", size = 9.5),
+        panel.grid.minor = element_blank(),
+        panel.spacing = unit(1.6, "lines"))
+ggsave(file.path(out_dir, "fig6c_competition_normalized_2012_2026_byyear.png"), pC,
+       width = 10, height = 5.5, dpi = 200, bg = "white")
+cat("Wrote", file.path(out_dir, "fig6c_competition_normalized_2012_2026_byyear.png"), "\n")
+
 write.csv(effort, file.path(proc_dir, "ringing_effort_by_year.csv"), row.names = FALSE, na = "NA")
