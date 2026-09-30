@@ -321,3 +321,57 @@ write.csv(combined_records %>% select(-smi_b),
 write.csv(trend_stats, file.path(proc_dir, "normalized_mass_trends_stats.csv"), row.names = FALSE)
 cat("Wrote data_processed/normalized_mass_records.csv and normalized_mass_trends_stats.csv\n")
 ```
+
+# Add wing-normalized mass to master_dataset_2010_2026.csv
+
+Per Inbal: `hirMASS`/`albMASS`/`hirMASS_breed`/`albMASS_breed` in
+`master_dataset_2010_2026.csv` are raw mean `Weight` (02_mass_analysis.Rmd).
+Add the same year-by-species means computed on the wing-normalized metrics
+(ratio and SMI, both kept - see "Background" above for why neither is
+picked as *the* method) instead.
+
+**Scope-matching gotcha caught while building this**: `combined_records`
+here (used for `group` above) does *not* filter to `is_new` - it includes
+retraps, unlike `hirMASS`/`albMASS`'s source (`spring_records` in
+02_mass_analysis.Rmd, which does filter `is_new`). Averaging the wrong
+population in would make these columns a subtly different sample than
+their raw counterparts (same bird counted more than once in some years).
+Fixed by filtering to `is_new` here before aggregating - `mass_ratio`/`smi`
+are already-computed per-individual values, so this is just a filter, no
+need to refit the SMI scaling exponent.
+
+**Little Tern has no breeder/non-breeder split** in this file (`group` is
+always `"Adult"` for alb) - issue #5 found no mass difference between
+Little Tern breeders and non-breeders under either definition, so #6
+deliberately didn't split it (see "Background" above). Consistent with
+that, `albMASS_breed_ratio`/`albMASS_breed_smi` are **not added** - inventing
+a split the analysis itself found no evidence for would be worse than
+leaving it out.
+
+```{r update-master-normalized}
+spring_new <- combined_records %>% filter(is_new, group != "Juvenile")
+
+agg <- function(df) df %>%
+  group_by(year) %>%
+  summarise(ratio = round(mean(mass_ratio), 4), smi = round(mean(smi), 1), .groups = "drop")
+
+hir_all    <- agg(spring_new %>% filter(species_label == "Common Tern")) %>%
+  rename(hirMASS_ratio = ratio, hirMASS_smi = smi)
+hir_breed  <- agg(spring_new %>% filter(species_label == "Common Tern", group == "Adult breeder")) %>%
+  rename(hirMASS_breed_ratio = ratio, hirMASS_breed_smi = smi)
+alb_all    <- agg(spring_new %>% filter(species_label == "Little Tern")) %>%
+  rename(albMASS_ratio = ratio, albMASS_smi = smi)
+
+norm_cols <- c("hirMASS_ratio", "hirMASS_smi", "hirMASS_breed_ratio", "hirMASS_breed_smi",
+               "albMASS_ratio", "albMASS_smi")
+
+master_path <- file.path(proc_dir, "master_dataset_2010_2026.csv")
+master <- read.csv(master_path) %>%
+  select(-any_of(norm_cols)) %>%
+  left_join(hir_all, by = "year") %>%
+  left_join(hir_breed, by = "year") %>%
+  left_join(alb_all, by = "year")
+
+write.csv(master, master_path, row.names = FALSE, na = "NA")
+cat("Updated", master_path, "with", paste(norm_cols, collapse = ", "), "\n")
+```

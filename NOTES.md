@@ -971,6 +971,26 @@ corrected for in any script.
   immediately after to restore them; verified the rendered HTML and other
   mass CSVs came out byte-identical to before (mass data itself didn't
   change, only chick/effort columns did).
+- **Added wing-normalized mass to `master_dataset_2010_2026.csv` too**, per
+  Inbal (`hirMASS`/`albMASS`/`hirMASS_breed`/`albMASS_breed` were raw
+  `Weight` only until now). New chunk at the end of
+  `mass_analysis/scripts/05_normalized_mass_trends.Rmd`: `hirMASS_ratio`,
+  `hirMASS_smi`, `hirMASS_breed_ratio`, `hirMASS_breed_smi`,
+  `albMASS_ratio`, `albMASS_smi` (both metrics kept side by side, same "no
+  single method chosen upfront" stance as the rest of issue #6). No
+  `albMASS_breed_*` columns - Little Tern has no breeder/non-breeder split
+  in this file (issue #5 found no mass difference there, #6 deliberately
+  didn't split it); adding one now would invent a distinction the analysis
+  found no evidence for.
+  **Scope gotcha caught while building this**: `combined_records` (the
+  source of `group`/`mass_ratio`/`smi` in that Rmd) does NOT filter to
+  `is_new` - includes retraps - unlike `hirMASS`/`albMASS`'s source in
+  `02_mass_analysis.Rmd`, which does. Averaging the unfiltered version in
+  would have made the normalized columns a subtly different (bird-
+  reweighed-multiple-times) sample than their raw counterparts. Fixed by
+  filtering to `is_new` before aggregating - `mass_ratio`/`smi` are
+  already-computed per-individual values, so no need to refit the SMI
+  scaling exponent, just filter which individuals feed the year-mean.
 
 ### Next session - pick up here (survival analysis)
 - **Immediate**: move on to the weather-parameter side of the model now
