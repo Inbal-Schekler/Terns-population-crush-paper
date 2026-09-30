@@ -850,11 +850,73 @@ corrected for in any script.
     substantive result *using* the corrected response variable, arguably
     separate. Left open for Inbal to decide next session.
 
+### Session 6 (2026-09-30)
+- Resolved the Session 5 "immediate" item: `01_extended_competition_plot.R`
+  + `fig3_competition_extended_2012_2026.png` committed/pushed (`7d7f95b`),
+  posted as a follow-up comment on #11.
+- Inbal spotted the same "number of fledglings" mismatch from #11 on
+  **slide 14** (same pptx, same title, different chart - year vs. fledglings
+  per species instead of competition-predictor vs. fledglings). Confirmed via
+  the embedded chart XML (`chart8.xml`=Little Tern/alb, `chart9.xml`=Common
+  Tern/hir): same metric, same numbers as #11's table, just plotted against
+  year.
+- Per Inbal's direction, stopped trusting any pre-tallied source (slide
+  values, `summary_2026.xlsx`) and built a **ground-truth chick count
+  straight from the individual-level ringing database**:
+  - `survival_analysis/02_number_of_chicks.R` - `ringing_data_raw.xlsx`
+    (~66k records), filtered to `Age==3` (EURING: hatched this calendar
+    year) and blank retrap/status column (genuinely new capture, not a
+    recapture). Grouped by ringing-date year + species. Extends to 2026
+    with real records (unlike `summary_2026.xlsx`, whose 2026 figure is a
+    known placeholder - "Open items" #1 above).
+    Output: `data_processed/chicks_ringed_from_raw_2010_2026.csv`.
+  - Verified against `data_2010-2020_legacy.csv` ("verified correct" per
+    the Source-files note above): 16/22 species-years match exactly, 6 are
+    off by 1-8. Checked a "ring replacement" flag as a candidate
+    explanation for the gap - didn't cleanly account for it, reported as
+    found rather than forced to match.
+  - `survival_analysis/03_slide14_chicks_by_year.R` - three-way comparison
+    (legacy vs. raw-derived vs. slide 14's plotted values) for 2012-2020:
+    legacy and raw-derived agree closely; **slide 14's plotted values are
+    consistently lower than both, never higher**, by as much as 136 birds
+    in one year (Common Tern, 2015). Also builds three plots matching
+    Yosef's slide 14 design exactly (marker colours, dotted linear trend,
+    no R²/equation): his numbers/years, real numbers/same years, real
+    numbers through 2026. Iterated twice more per Inbal's feedback -
+    species panel order now matches the slide (Common Tern left, Little
+    Tern right) and y-axis ceiling is fixed per species (0-100 alb, 0-300
+    hir) across all three figures for easy visual comparison.
+  - `survival_analysis/04_chicks_trend_significance.R` - is the year-trend
+    in the raw-derived counts actually significant? Shapiro-Wilk confirms
+    Pearson is valid (residuals ~normal in every subset checked). Common
+    Tern's rise is significant and robust (p=0.034 full series, p=0.026
+    without 2026, p=0.035 even in Yosef's original 2010-2020 window alone).
+    Little Tern's decline is borderline in the full series (p=0.061),
+    **wasn't detectable at all in Yosef's original 2010-2020 window**
+    (p=0.57), and becomes clearly significant (p=0.014) once 2010 - his
+    first, under-sampled season - is excluded (removing it *strengthens*
+    the trend, since 2010's low count was working against a declining
+    pattern, not for one).
+- **Opened [issue #12](https://github.com/Inbal-Schekler/Terns-population-crush-paper/issues/12)**
+  ("Number of chicks reported by Yosef (slide 14) vs. raw ringing records")
+  documenting all of the above - methodology, both comparison tables, all
+  three plots, then a follow-up comment with the significance results.
+  Repo was private, which silently breaks `raw.githubusercontent.com`
+  image embeds (confirmed via curl - 404 unauthenticated, and doesn't
+  render even for the owner's logged-in browser) and would have blocked
+  Yosef from seeing the issue at all - **made the repo public** (Inbal's
+  choice, over adding Yosef as a private collaborator) to fix both at
+  once. Inbal has emailed Yosef pointing at #12.
+
 ### Next session - pick up here (survival analysis)
-- **Immediate**: decide where the Little Tern competition-weakening
-  finding goes (comment on #11 vs. new issue), then commit + push
-  `survival_analysis/01_extended_competition_plot.R` and
-  `output/figures/fig3_competition_extended_2012_2026.png`.
+- **Immediate**: waiting on Yosef's reply on #12 - where did slide 13/14's
+  "מספר פרחונים" (number of fledglings) values actually come from? Once
+  known, decide whether `chicks_ringed_from_raw_2010_2026.csv` (or the
+  legacy file) should replace `chicks_hir`/`chicks_alb` in
+  `master_dataset_2010_2026.csv` (currently sourced from
+  `summary_2026.xlsx`) - not done yet, additive-only for now per usual
+  practice on this repo (keep candidate versions side by side until a
+  source is confirmed, don't overwrite).
 - Continue the "return to what Yosef did, with the years passed" pass:
   Block A (weather/predation/newcastle) and the mass-condition model
   still only run 2010-2020/2012-2020 - same extension approach (real
