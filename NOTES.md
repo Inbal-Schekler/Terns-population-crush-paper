@@ -993,11 +993,30 @@ corrected for in any script.
   scaling exponent, just filter which individuals feed the year-mean.
 
 ### Next session - pick up here (survival analysis)
-- **Immediate**: move on to the weather-parameter side of the model now
-  that the chick-count source is settled (raw+normalized, both in
-  `master_dataset_2010_2026.csv`). Still blocked at 2010-2020 for
-  `temp37/temp12/meanMAXtemp/meanMINtemp/rainMAY/rainJUN/predation/newcastle`
-  - issues #1/#3, needs Yosef.
+- **Immediate, before writing any code**: Inbal wants to *discuss and
+  agree on a statistical approach* for the weather parameters before
+  touching them - explicitly flagged at the end of this session as a
+  design conversation to have first, not something to jump into
+  implementing. The core problem: weather/predation/newcastle are still
+  only populated 2010-2020 (`temp37/temp12/meanMAXtemp/meanMINtemp/
+  rainMAY/rainJUN/predation/newcastle` - issues #1/#3, needs Yosef for
+  2021-2026), so any weather model is capped at **n=11 years**, or n=9-10
+  per species depending on which years have both a valid response and
+  full predictors. This directly connects to the AICc small-sample
+  instability already documented in
+  `survival_analysis/yosef_analysis/YOSEF_2020_ANALYSIS.md` §5 (the
+  correction term `2k(k+1)/(n-k-1)` explodes as k approaches n - already
+  a real problem in Yosef's original n=9-11 models) and to the still-open
+  question logged at the end of Session 5 below: whether to keep doing
+  season-level AICc model selection at all at this sample size, vs.
+  pre-registering a small candidate set instead of a full combinatorial
+  search, vs. using the individual-level ringing data for a proper
+  capture-recapture model instead of season-total counts. Worth deciding
+  this before picking predictors, not after.
+- Once that's settled: chick-count source itself is ready either way
+  (raw+normalized, both in `master_dataset_2010_2026.csv`), so the
+  weather-parameter work can proceed as soon as the approach is agreed and
+  (separately) Yosef provides 2021-2026 weather/predation/Newcastle data.
 - Open question for Yosef, logged on #12: is there a non-effort reason to
   treat 2010 specially (first season, methodology/coverage) - its ringing
   effort was NOT unusually low, so that's not the explanation if 2010
