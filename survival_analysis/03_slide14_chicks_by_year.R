@@ -109,7 +109,10 @@ to_long <- function(df, alb_col, hir_col) {
   bind_rows(
     data.frame(year = df$year, count = df[[alb_col]], species = "Little Tern (alb)"),
     data.frame(year = df$year, count = df[[hir_col]], species = "Common Tern (hir)")
-  ) %>% mutate(species = factor(species, levels = c("Little Tern (alb)", "Common Tern (hir)")))
+  ) %>%
+    # Common Tern left, Little Tern right - matches chart8 (alb)/chart9 (hir)
+    # left-right position on slide 14 itself, for easy side-by-side comparison.
+    mutate(species = factor(species, levels = c("Common Tern (hir)", "Little Tern (alb)")))
 }
 
 # --- Plot A: Yosef's original slide 14, replica design + his own numbers ---
