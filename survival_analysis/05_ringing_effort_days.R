@@ -4,24 +4,39 @@
 # fledging-success metric. Consistent with the finding there: his numbers are
 # always <= the raw/legacy ringing counts, never higher.
 #
-# Per Inbal: check ringing EFFORT - how many summer days was the team out
-# ringing at all, regardless of whether a chick was caught that day - and
-# normalize the chick counts by it.
+# Per Inbal: check ringing EFFORT - how many nights was the team out ringing
+# at all that season, regardless of whether a chick was caught - and
+# normalize the chick counts by it. One shared number per year (not per
+# species) since Little Tern and Common Tern are ringed on the same site
+# visits.
 #
-# Effort measure, from ringing_data_raw.xlsx ("Data" sheet):
-#   summer ringing days = distinct dates, June-August, with >=1 tern ringing
-#   record of EITHER species - ANY age/status (adults + chicks, new captures
-#   + retraps). Per Inbal: Little Tern and Common Tern are ringed at the same
-#   site on the same site visits, so effort is a single shared number, not
-#   two separate species-specific day counts - when he's out ringing, both
-#   species get the same effort that day.
-#   Deliberately NOT "days a chick was ringed" - that measure is circular,
-#   since by construction such a day always has >=1 chick in it, so it can
-#   only ever track the chick count, not measure independent field effort.
-#   June-August window chosen because 99.8% of all age==3 (chick) records
-#   fall in those 3 months (260 June + 1941 July + 1178 August + 3 September,
-#   checked across the full file) - i.e. it's the real breeding-season
-#   ringing window, not an arbitrary date cut.
+# v1 of this script counted ANY tern record (any Rec status) as a day of
+# effort and got absurd numbers (60-90+ days/season). Per Inbal, checking
+# against an actual email of Yosef's 2025 ringing dates (7 nights:
+# 24/06, 03/07, 13/07, 24/07, 04/08, 14/08, 21/08) showed why: the `Rec`
+# column's dominant value `R` (40,568 of 66,412 rows - by far the largest
+# category) is NOT a physical recapture/retrap - checking it shows records
+# on 80 of ~92 possible summer days with up to 233/day, nothing like a
+# ringing-session cadence. It's almost certainly passive resighting/
+# colour-ring reads (telescope/camera), not hands-on ringing. Records with
+# no Wing/Weight measurement at all support this - a bird that's only
+# visually read was never in the hand.
+#
+# What actually isolates ringing-session dates: records with a BLANK `Rec`
+# (genuinely new capture, in hand) - any age, not just chicks (adults get
+# ringed/processed the same nights). For 2025 this gives 11 distinct dates
+# in Jun-Aug - much closer to Yosef's 7, and critically, they cluster in
+# adjacent-day PAIRS (e.g. 2025-07-03/07-04, 07-13/07-14...) at roughly
+# 10-day intervals, matching Yosef's real cadence almost exactly once paired
+# up. Per Inbal: ringing happens at night, so a single overnight session
+# that straddles midnight gets split across two calendar dates in the data
+# for birds processed before/after 00:00 - same session, not two.
+#
+# Fix: merge any run of consecutive calendar dates (gap == 1 day) into one
+# "ringing night". For 2025 this gives 6 nights (Yosef's 7 minus one night
+# with apparently zero NEW captures that year, so invisible to this method -
+# see caveat in the issue writeup: a night where every bird processed was a
+# resighting/control, not a new capture, leaves no trace here).
 
 library(readxl)
 library(dplyr)
@@ -37,87 +52,97 @@ raw <- read_excel(ring_path, sheet = "Data", col_names = FALSE, skip = 2)
 # Same column positions as 02_number_of_chicks.R (readxl drops the fully
 # blank leading column openpyxl keeps, so these are one less than the file's
 # visual column order).
+rec     <- raw[[3]]
 species <- raw[[6]]
 date    <- raw[[11]]
+
+is_blank <- function(x) is.na(x) | trimws(as.character(x)) == ""
 
 records <- data.frame(
   date    = as.Date(date),
   year    = as.integer(format(as.Date(date), "%Y")),
   month   = as.integer(format(as.Date(date), "%m")),
   species = species,
+  rec     = rec,
   stringsAsFactors = FALSE
 ) %>%
-  filter(species %in% c("STEALB", "STEHIR"), !is.na(year))
+  filter(species %in% c("STEALB", "STEHIR"), !is.na(year), is_blank(rec), month %in% 6:8)
 
-# ---- total summer (Jun-Aug) ringing days per year, BOTH species pooled ----
-# One shared effort number: a day counts if either species was ringed that
-# day (same site visit covers both).
-ringing_days <- records %>%
-  filter(month %in% 6:8) %>%
+# ---- merge consecutive-day dates into ringing "nights" ---------------------
+merge_nights <- function(dates) {
+  dates <- sort(unique(dates))
+  if (length(dates) == 0) return(integer(0))
+  breaks <- c(TRUE, diff(dates) > 1)   # start a new night whenever the gap > 1 day
+  cumsum(breaks)
+}
+
+ringing_nights <- records %>%
   distinct(year, date) %>%
-  count(year, name = "ringing_days")
+  group_by(year) %>%
+  summarise(ringing_nights = length(unique(merge_nights(date))), .groups = "drop")
 
-cat("Total summer (Jun-Aug) ringing days per year, both species pooled:\n")
-print(ringing_days)
+cat("Ringing nights per year (blank-Rec new captures, Jun-Aug, merging\n")
+cat("same-session dates that cross midnight into one night):\n")
+print(ringing_nights)
 
-# ---- bring in the chick counts, compute chicks-per-ringing-day ------------
+# ---- bring in the chick counts, compute chicks-per-ringing-night ----------
 chicks <- read.csv(file.path(proc_dir, "chicks_ringed_from_raw_2010_2026.csv"))
 
-effort <- ringing_days %>%
+effort <- ringing_nights %>%
   full_join(chicks, by = "year") %>%
   arrange(year) %>%
   mutate(
-    alb_per_day = round(chicks_alb / ringing_days, 2),
-    hir_per_day = round(chicks_hir / ringing_days, 2)
+    alb_per_night = round(chicks_alb / ringing_nights, 2),
+    hir_per_night = round(chicks_hir / ringing_nights, 2)
   )
 
-cat("\nChicks per (shared) ringing day, 2010-2026:\n")
-print(effort %>% select(year, ringing_days, chicks_alb, alb_per_day,
-                         chicks_hir, hir_per_day))
+cat("\nChicks per ringing night, 2010-2026:\n")
+print(effort %>% select(year, ringing_nights, chicks_alb, alb_per_night,
+                         chicks_hir, hir_per_night))
 
 out_path <- file.path(proc_dir, "ringing_effort_by_year.csv")
 write.csv(effort, out_path, row.names = FALSE, na = "NA")
 cat("\nWrote", normalizePath(out_path), "\n")
 
-cat("\n=== Is total summer ringing effort roughly steady across years? ===\n")
-cat(sprintf("Ringing days/year: mean=%.1f, sd=%.1f, CV=%.1f%%, range=%d-%d\n",
-            mean(effort$ringing_days), sd(effort$ringing_days),
-            100 * sd(effort$ringing_days) / mean(effort$ringing_days),
-            min(effort$ringing_days), max(effort$ringing_days)))
+cat("\n=== Is ringing effort (nights/season) roughly steady across years? ===\n")
+cat(sprintf("Ringing nights/year: mean=%.1f, sd=%.1f, CV=%.1f%%, range=%d-%d\n",
+            mean(effort$ringing_nights), sd(effort$ringing_nights),
+            100 * sd(effort$ringing_nights) / mean(effort$ringing_nights),
+            min(effort$ringing_nights), max(effort$ringing_nights)))
 
-# ---- does the year-trend hold on the per-day rate, not just raw count? ----
-cat("\n=== Year trend: raw count vs. chicks-per-ringing-day ===\n")
+# ---- does the year-trend hold on the per-night rate, not just raw count? --
+cat("\n=== Year trend: raw count vs. chicks-per-ringing-night ===\n")
 for (sp in c("alb", "hir")) {
   raw_col <- paste0("chicks_", sp)
-  rate_col <- paste0(sp, "_per_day")
+  rate_col <- paste0(sp, "_per_night")
   d <- effort[!is.na(effort[[rate_col]]) & is.finite(effort[[rate_col]]), ]
   ct_raw  <- cor.test(d$year, d[[raw_col]])
   ct_rate <- cor.test(d$year, d[[rate_col]])
   cts_rate <- cor.test(d$year, d[[rate_col]], method = "spearman", exact = FALSE)
-  cat(sprintf("%s: raw count r=%.3f p=%.4f  |  per-day rate r=%.3f p=%.4f (Spearman rho=%.3f p=%.4f)\n",
+  cat(sprintf("%s: raw count r=%.3f p=%.4f  |  per-night rate r=%.3f p=%.4f (Spearman rho=%.3f p=%.4f)\n",
               sp, ct_raw$estimate, ct_raw$p.value, ct_rate$estimate, ct_rate$p.value,
               cts_rate$estimate, cts_rate$p.value))
 }
 
-cat("\n=== Normality check on the per-day rates (residuals of rate ~ year) ===\n")
+cat("\n=== Normality check on the per-night rates (residuals of rate ~ year) ===\n")
 for (sp in c("alb", "hir")) {
-  rate_col <- paste0(sp, "_per_day")
+  rate_col <- paste0(sp, "_per_night")
   d <- effort[is.finite(effort[[rate_col]]), ]
   m <- lm(d[[rate_col]] ~ d$year)
   sw <- shapiro.test(resid(m))
-  cat(sprintf("%s_per_day residuals: W=%.3f, p=%.4f -> %s\n", sp, sw$statistic, sw$p.value,
+  cat(sprintf("%s_per_night residuals: W=%.3f, p=%.4f -> %s\n", sp, sw$statistic, sw$p.value,
               ifelse(sw$p.value < 0.05, "NOT normal, prefer Spearman", "~normal, Pearson OK")))
 }
 
-# ---- final plot: chicks-per-ringing-day, same slide-14 design -------------
+# ---- final plot: chicks-per-ringing-night, same slide-14 design -----------
 library(ggplot2)
 out_dir <- "output/figures"
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
 species_colors <- c("Little Tern (alb)" = "#F6C90A", "Common Tern (hir)" = "#FF0000")
 plot_data <- bind_rows(
-  data.frame(year = effort$year, count = effort$hir_per_day, species = "Common Tern (hir)"),
-  data.frame(year = effort$year, count = effort$alb_per_day, species = "Little Tern (alb)")
+  data.frame(year = effort$year, count = effort$hir_per_night, species = "Common Tern (hir)"),
+  data.frame(year = effort$year, count = effort$alb_per_night, species = "Little Tern (alb)")
 ) %>%
   filter(is.finite(count)) %>%
   mutate(species = factor(species, levels = c("Common Tern (hir)", "Little Tern (alb)")))
@@ -127,16 +152,16 @@ p <- ggplot(plot_data, aes(x = year, y = count)) +
   geom_point(aes(fill = species), shape = 21, size = 3, color = "grey20", stroke = 0.3) +
   facet_wrap(~species, scales = "free_y") +
   scale_fill_manual(values = species_colors, guide = "none") +
-  labs(title = "Chicks ringed per (shared) summer ringing day, 2010-2026",
-       subtitle = "Normalized for field effort: chicks_alb/hir ÷ total distinct Jun-Aug ringing days that season (both species pooled - same site visits)",
-       x = "Year", y = "Chicks ringed per ringing day") +
+  labs(title = "Chicks ringed per ringing night, 2010-2026",
+       subtitle = "Normalized for field effort: chicks_alb/hir ÷ ringing nights that season (both species pooled; consecutive dates crossing midnight merged into one night)",
+       x = "Year", y = "Chicks ringed per ringing night") +
   theme_minimal(base_size = 12) +
   theme(strip.text = element_text(face = "bold"),
         plot.title = element_text(face = "bold", size = 13),
-        plot.subtitle = element_text(color = "grey35", size = 9.5),
+        plot.subtitle = element_text(color = "grey35", size = 8.5),
         panel.grid.minor = element_blank(),
         panel.spacing = unit(1.4, "lines"))
 
-ggsave(file.path(out_dir, "fig5_chicks_per_ringing_day_2010_2026.png"), p,
+ggsave(file.path(out_dir, "fig5_chicks_per_ringing_night_2010_2026.png"), p,
        width = 9, height = 4.5, dpi = 200, bg = "white")
-cat("Wrote", file.path(out_dir, "fig5_chicks_per_ringing_day_2010_2026.png"), "\n")
+cat("Wrote", file.path(out_dir, "fig5_chicks_per_ringing_night_2010_2026.png"), "\n")
