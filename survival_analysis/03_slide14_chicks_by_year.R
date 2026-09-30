@@ -85,9 +85,23 @@ cat("\nWrote", normalizePath(comp_path), "\n")
 # ---- 3. shared plot design, matching Yosef's slide 14 ---------------------
 species_colors <- c("Little Tern (alb)" = "#F6C90A", "Common Tern (hir)" = "#FF0000")
 
+# Same y-axis ceiling per species across all three figures (0-100 for Little
+# Tern, 0-300 for Common Tern), so the panels line up when comparing figures
+# side by side. Implemented as invisible anchor points (not scale_*(limits=)
+# + free_y) so a real value that exceeds the ceiling (e.g. hir=315 in 2022)
+# still shows in full instead of being silently clipped off the panel.
+y_anchors <- data.frame(
+  species = factor(c("Common Tern (hir)", "Common Tern (hir)",
+                      "Little Tern (alb)", "Little Tern (alb)"),
+                    levels = c("Common Tern (hir)", "Little Tern (alb)")),
+  year = 2015,
+  count = c(0, 300, 0, 100)
+)
+
 make_slide14_style_plot <- function(df, title, subtitle, y_label, out_file,
                                      width = 8.5, height = 4.5) {
   p <- ggplot(df, aes(x = year, y = count)) +
+    geom_blank(data = y_anchors, aes(x = year, y = count), inherit.aes = FALSE) +
     geom_smooth(method = "lm", se = FALSE, color = "black", linetype = "dotted",
                 linewidth = 0.9) +
     geom_point(aes(fill = species), shape = 21, size = 3, color = "grey20", stroke = 0.3) +
