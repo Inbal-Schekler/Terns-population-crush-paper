@@ -174,6 +174,63 @@ only, not part of the current analysis pipeline.
 
 ---
 
+## `weather_predation_2021_2026.csv`
+
+**What it is**: `predation`/`newcastle` flags for 2021-2026 (yes/no), the
+same meaning as the matching columns in `data_2010-2020_legacy.csv` but
+filled in by Inbal directly from field knowledge, not from any file Yosef
+sent (none of his files cover these years at all). `newcastle` = no
+throughout; `predation` = yes for 2021 and 2025, no for 2022-2024 and
+2026 (confirmed 2026-10-07; Inbal's first answer here had been a mistake,
+corrected before use).
+
+Temp/rain for these years are NOT in this file - see `weather_ims_2014_2026.csv`
+below, since there's no Yosef-equivalent temp/rain source for 2021-2026 to
+stay consistent with (unlike predation/newcastle, which are just Inbal's
+own knowledge either way).
+
+---
+
+## `weather_ims_2014_2026.csv`
+
+**What it is**: `temp37_ims`/`temp12_ims`/`meanMAXtemp_ims`/`meanMINtemp_ims`/
+`rainMAY_ims`/`rainJUN_ims` - self-computed equivalents of
+`data_2010-2020_legacy.csv`'s weather columns, but spanning 2014-2026 with
+one consistent method (vs. the legacy columns, which stop at 2020 and
+whose original computation method is unknown/Yosef's own).
+
+**Source**: raw 10-minute station data downloaded by Inbal from
+ims.gov.il, station **עין כרמל** (nearest IMS station to Atlit) - chosen
+by elimination, not confirmed against Yosef directly, since the IMS
+portal's station picker is a JS map tool neither of us could cross-check
+his exact choice against.
+
+**Method**: timestamps in the raw download are UTC ("שעון עולמי") -
+converted to Israel local time (IDT, UTC+3; May-June falls entirely
+within DST) before grouping into calendar days. Per local day: `temp37` =
+1 if that day's max temp >=37C (inclusive), `temp12` = 1 if that day's min
+temp <12C (strict) - summed across May-June for the day-count columns.
+`meanMAXtemp`/`meanMINtemp` = mean of daily max/min over May-June.
+`rainMAY`/`rainJUN` = sum of the 10-min rain readings within each
+calendar month.
+
+**Validated against the legacy columns** for the 7 overlapping years
+(2014-2020) before trusting this for the new 2021-2026 years - see
+NOTES.md Session 7 for the full comparison table. Summary: `temp12` exact
+all 7 years; `meanMAXtemp` within 0.1C every year; `meanMINtemp`
+consistently ~0.1-0.3C lower than legacy (small, same-direction bias every
+year, not noise, but too small to matter); `temp37` off by 1 in 2 of 7
+years; `rainMAY` mostly close but 2015 is an unexplained outlier
+(1.9 vs. legacy's 9mm).
+
+**Deliberately NOT used to overwrite or extend the legacy columns** - kept
+as separate `_ims`-suffixed columns in `master_dataset_2010_2026.csv` so
+both methods are visible side by side (per Inbal - see
+feedback-additive-analysis-iteration in the memory system). No rows for
+2010-2013 (not downloaded).
+
+---
+
 ## `summary_2026.xlsx`
 *(original filename: `סיכום 2026.xlsx`)*
 

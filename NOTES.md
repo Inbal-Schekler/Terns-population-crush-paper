@@ -76,9 +76,20 @@ corrected for in any script.
 1. **2026 Little Tern chick count.** Per Yosef's email, `summary_2026.xlsx`
    is mostly a copy of the 2025 file - confirm/update the actual 2026 count
    (currently shows 4 in the sheet).
-2. **Weather, predation, Newcastle-disease flags for 2021-2026.** Not present
-   anywhere in the folder Yosef sent - `master_dataset_2010_2026.csv` has
-   these as NA for those years. Needed to extend the GLM past 2020.
+2. **Weather, predation, Newcastle-disease flags for 2021-2026: RESOLVED
+   2026-10-07.** `predation`/`newcastle` filled in by Inbal directly (yes
+   for 2021 and 2025, no otherwise; newcastle no throughout). Temp/rain:
+   no Yosef-equivalent source exists for these years (unlike predation/
+   newcastle, which are just Inbal's direct knowledge) - instead, Inbal
+   downloaded raw IMS station data (ims.gov.il, station "עין כרמל") and we
+   computed matching metrics ourselves for **2014-2026** (not just
+   2021-2026), added as NEW `_ims`-suffixed columns in
+   `master_dataset_2010_2026.csv` alongside the original legacy columns
+   (not replacing them - see
+   [[feedback-additive-analysis-iteration]]). See Session 7 below for the
+   validation results and full methodology. Original `temp37`/`temp12`/
+   `meanMAXtemp`/`meanMINtemp`/`rainMAY`/`rainJUN` (Yosef's source) remain
+   2010-2020-only, untouched.
 3. **Pre-breeding body mass (`hirMASS`/`albMASS`) for 2021-2026.** Also not
    present in `summary_2026.xlsx` - source unknown (data1.csv's values for
    2012-2020 presumably came from a separate ringing/biometrics database not
@@ -1011,46 +1022,88 @@ corrected for in any script.
   weakened the competition signal was already present in 2021-2024, not
   specifically the 2025-2026 crash. Posted to
   [issue #11](https://github.com/Inbal-Schekler/Terns-population-crush-paper/issues/11#issuecomment-6038804696).
-- **Started filling the 2021-2026 weather/predation/Newcastle gap** (Open
-  item #2 above), at Inbal's request: "update Yosef's analysis with the
-  recent years, although we know it has issues - just to show him."
-  Explicit scope: redo his original approach as-is first, decide on
-  further changes after. Added `data_raw/weather_predation_2021_2026.csv`
-  (new file, not touching `data_2010-2020_legacy.csv` - keeps that one an
-  exact copy of the original verified source) and updated
-  `scripts/00_build_dataset.R` to `bind_rows` the two before joining into
-  `master_dataset_2010_2026.csv`. **`newcastle` confirmed "no" for all of
-  2021-2026 by Inbal** - filled in; `temp37/temp12/meanMAXtemp/
-  meanMINtemp/rainMAY/rainJUN/predation` still NA, pending the rest of her
-  data. Rebuilt and verified via `git diff`: only the `newcastle` cells
-  changed, mass columns (re-rendered `02_mass_analysis.Rmd` +
-  `05_normalized_mass_trends.Rmd` immediately after, per the standing
-  gotcha above) came out byte-identical.
+- **Filled the 2021-2026 weather/predation/Newcastle gap** (Open item #2
+  above, now resolved), at Inbal's request: "update Yosef's analysis with
+  the recent years, although we know it has issues - just to show him."
+  - `predation`/`newcastle`, 2021-2026: Inbal's direct knowledge.
+    `newcastle` = no throughout. `predation` went through two rounds -
+    Inbal's first answer ("only 2026") turned out to be a mistake,
+    corrected to **yes for 2021 and 2025, no for 2022-2024 and 2026**.
+    Confirmed explicitly both times before writing (see established
+    pattern: confirm data corrections before writing, don't just
+    overwrite on say-so). Live in `data_raw/weather_predation_2021_2026.csv`.
+  - temp/rain, 2021-2026: no Yosef-equivalent source exists for these
+    years at all (unlike predation/newcastle). Inbal downloaded raw IMS
+    (ims.gov.il) 10-minute station data herself, station **עין כרמל**
+    (nearest to Atlit) - picked by elimination since the IMS portal's
+    station/parameter pickers are JS dropdowns I can't drive remotely.
+    Computed `temp37`/`temp12`/`meanMAXtemp`/`meanMINtemp`/`rainMAY`/
+    `rainJUN` from the raw 10-min records: convert UTC timestamps to
+    Israel local time (IDT, UTC+3 - May-June is entirely within DST),
+    group into local calendar days, `temp37` = days with daily max >=37C
+    (inclusive), `temp12` = days with daily min <12C (strict), mean/sum
+    over May-June.
+  - **Validated against Yosef's known values before trusting the method**:
+    Inbal downloaded 2019 and 2020 first specifically to check this
+    reproduces his numbers. 2019: 5/6 exact (only meanMINtemp off by
+    -0.24C). 2020: 4/6 exact (meanMINtemp -0.19C, rainMAY off by 2.2mm).
+    Good enough to proceed - Inbal then downloaded every other year she
+    had (2014-2018, 2021-2026) for a fuller check. Across all 7
+    overlapping years (2014-2020): `temp12` exact all 7 years,
+    `meanMAXtemp` within 0.1C every year, `meanMINtemp` consistently
+    ~0.1-0.3C lower than Yosef's reported value (small, same-direction
+    bias every year - a real methodological difference, not noise, but
+    too small to matter), `temp37` off by exactly 1 in 2 of 7 years
+    (borderline day-count metric). `rainMAY` was the least reliable -
+    mostly within a couple mm but **2015 is a real outlier** (computed
+    1.9mm vs Yosef's 9mm) with no explanation found - flagged, not
+    chased further.
+  - **Decision on how to store this** (Inbal, after seeing the comparison
+    table): don't overwrite/extend the legacy `temp37` etc. columns with
+    the self-computed values - instead add new `temp37_ims`/`temp12_ims`/
+    `meanMAXtemp_ims`/`meanMINtemp_ims`/`rainMAY_ims`/`rainJUN_ims`
+    columns computed with ONE consistent method across all years we have
+    IMS data for (**2014-2026**, not just the new 2021-2026 years) -
+    avoids a methodology seam at the 2020/2021 boundary if these ever get
+    used in the same model. Legacy columns stay exactly as Yosef had
+    them, 2010-2020 only, untouched. New data in
+    `data_raw/weather_ims_2014_2026.csv`;
+    `data_raw/weather_predation_2021_2026.csv` trimmed down to just
+    `predation`/`newcastle` (temp/rain moved out of it, into the _ims
+    file). `scripts/00_build_dataset.R` updated to join both. Per
+    [[feedback-additive-analysis-iteration]] again - two weather sources
+    kept side by side, not one replacing the other, decision on which to
+    model with deferred.
+  - Rebuilt and verified via `git diff`: only the new `_ims` columns
+    appeared, nothing else changed; mass columns (re-rendered
+    `02_mass_analysis.Rmd` + `05_normalized_mass_trends.Rmd` immediately
+    after, per the standing gotcha above) came out byte-identical.
 - **2022 pair counts confirmed permanently missing** (Open item #4 above,
   updated) - Inbal confirmed this isn't recoverable, not just absent from
   the workbook. Closed as a known, permanent gap rather than left as a
   thing to keep chasing.
 
 ### Next session - pick up here (survival analysis)
-- **Immediate**: fill in the rest of `data_raw/weather_predation_2021_2026.csv`
-  (`temp37/temp12/meanMAXtemp/meanMINtemp/rainMAY/rainJUN/predation`) once
-  Inbal has the data, then rerun `00_build_dataset.R` + re-render
-  `02_mass_analysis.Rmd`/`05_normalized_mass_trends.Rmd` (same gotcha as
-  always). Once filled, Inbal wants Yosef's *original* 2012-2020 model
-  approach rerun as-is through 2026 first (to show him, issues-and-all),
-  before any redesign - see her framing above. The statistical-approach
-  discussion below is about what comes *after* that first as-is extension,
-  not a blocker for it.
+- **Weather/predation/Newcastle gap is now filled for 2021-2026** (both
+  the legacy-style columns via `predation`/`newcastle` only, and the new
+  `_ims`-suffixed temp/rain columns spanning 2014-2026 - see Session 7
+  above). **Immediate next step**: Inbal wants Yosef's *original*
+  2012-2020 model approach rerun as-is through 2026 first (to show him,
+  issues-and-all), before any redesign - see her framing above. Two weather
+  sources now exist (legacy 2010-2020-only vs. `_ims` 2014-2026) - for
+  this as-is replication, default to whichever matches what Yosef's
+  original model actually used (the legacy columns), extended only as far
+  as they go; a decision on whether/how to bring in the `_ims` columns
+  belongs to the redesign discussion below, not this replication step.
 - Separately, still unresolved: Inbal wants to *discuss and agree on a
   statistical approach* for the weather parameters before building a new,
   better model - explicitly flagged as a design conversation to have, not
-  something to jump into implementing. The core problem: even once
-  2021-2026 `temp37/temp12/meanMAXtemp/meanMINtemp/rainMAY/rainJUN/predation`
-  is filled in, that's only 11 more years (`newcastle` is the one column
-  already confirmed/done for 2021-2026) - any weather model is capped at
-  **n=17 years total** (2010-2026), or fewer per species depending on which
-  years have both a valid response and full predictors. This directly
-  connects to the AICc small-sample
+  something to jump into implementing. The core problem: even with
+  2021-2026 predictors available now, that's still a small-n problem -
+  any weather model is capped at **n=17 years total** (2010-2026, using
+  the `_ims` columns), or fewer per species depending on which years have
+  both a valid response and full predictors. This directly connects to
+  the AICc small-sample
   instability already documented in
   `survival_analysis/yosef_analysis/YOSEF_2020_ANALYSIS.md` §5 (the
   correction term `2k(k+1)/(n-k-1)` explodes as k approaches n - already
