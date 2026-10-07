@@ -83,10 +83,13 @@ corrected for in any script.
    present in `summary_2026.xlsx` - source unknown (data1.csv's values for
    2012-2020 presumably came from a separate ringing/biometrics database not
    included here).
-4. **2022 pair counts** are missing in the source workbook itself
-   (`מספר זוגות בעתלית - רב שנתי` sheet has a blank row for 2022). 2026 pair
-   counts were added by Inbal directly to this sheet (2026-09-04): 1063
-   Common Tern / 67 Little Tern pairs, two-cameras method.
+4. **2022 pair counts: confirmed permanently missing** (2026-10-07, per
+   Inbal - not just absent from the source workbook, the data doesn't
+   exist to go find). `master_dataset_2010_2026.csv`'s 2022 row will stay
+   NA for `pairs_hir`/`pairs_alb`/`pairs_method` - not an open item to
+   chase further. 2026 pair counts were added by Inbal directly to the
+   source sheet (2026-09-04): 1063 Common Tern / 67 Little Tern pairs,
+   two-cameras method.
 5. **Density index for the paper's model.** Yosef suggested representing
    rising density (of Common Tern, and possibly of Little Tern on itself) as
    a predictor, e.g. a cumulative multi-year breeding-success index. Not yet
@@ -992,17 +995,62 @@ corrected for in any script.
   already-computed per-individual values, so no need to refit the SMI
   scaling exponent, just filter which individuals feed the year-mean.
 
+### Session 7 (2026-10-07)
+- **Issue #11 follow-up**: Inbal noticed Little Tern chick output collapsed
+  the last two years (21 in 2024 -> 5 in 2025 -> 4 in 2026) and wanted to
+  check whether that collapse is what's driving the weakened competition
+  signal seen in the full 2012-2026 window. Added
+  `survival_analysis/07_competition_normalized_excl_crash.R` (new file,
+  doesn't modify `06` - per
+  [[feedback-additive-analysis-iteration]]/standing preference): a third
+  window, 2012-2024 (n=13), excluding 2025-2026. **Finding: dropping those
+  two years does NOT restore significance** - Little Tern r=-0.438
+  (p=0.135) sits between Yosef's original significant result (r=-0.673,
+  p=0.047, n=9) and the full-extended non-significant one (r=-0.359,
+  p=0.189, n=15), but stays non-significant either way. So whatever
+  weakened the competition signal was already present in 2021-2024, not
+  specifically the 2025-2026 crash. Posted to
+  [issue #11](https://github.com/Inbal-Schekler/Terns-population-crush-paper/issues/11#issuecomment-6038804696).
+- **Started filling the 2021-2026 weather/predation/Newcastle gap** (Open
+  item #2 above), at Inbal's request: "update Yosef's analysis with the
+  recent years, although we know it has issues - just to show him."
+  Explicit scope: redo his original approach as-is first, decide on
+  further changes after. Added `data_raw/weather_predation_2021_2026.csv`
+  (new file, not touching `data_2010-2020_legacy.csv` - keeps that one an
+  exact copy of the original verified source) and updated
+  `scripts/00_build_dataset.R` to `bind_rows` the two before joining into
+  `master_dataset_2010_2026.csv`. **`newcastle` confirmed "no" for all of
+  2021-2026 by Inbal** - filled in; `temp37/temp12/meanMAXtemp/
+  meanMINtemp/rainMAY/rainJUN/predation` still NA, pending the rest of her
+  data. Rebuilt and verified via `git diff`: only the `newcastle` cells
+  changed, mass columns (re-rendered `02_mass_analysis.Rmd` +
+  `05_normalized_mass_trends.Rmd` immediately after, per the standing
+  gotcha above) came out byte-identical.
+- **2022 pair counts confirmed permanently missing** (Open item #4 above,
+  updated) - Inbal confirmed this isn't recoverable, not just absent from
+  the workbook. Closed as a known, permanent gap rather than left as a
+  thing to keep chasing.
+
 ### Next session - pick up here (survival analysis)
-- **Immediate, before writing any code**: Inbal wants to *discuss and
-  agree on a statistical approach* for the weather parameters before
-  touching them - explicitly flagged at the end of this session as a
-  design conversation to have first, not something to jump into
-  implementing. The core problem: weather/predation/newcastle are still
-  only populated 2010-2020 (`temp37/temp12/meanMAXtemp/meanMINtemp/
-  rainMAY/rainJUN/predation/newcastle` - issues #1/#3, needs Yosef for
-  2021-2026), so any weather model is capped at **n=11 years**, or n=9-10
-  per species depending on which years have both a valid response and
-  full predictors. This directly connects to the AICc small-sample
+- **Immediate**: fill in the rest of `data_raw/weather_predation_2021_2026.csv`
+  (`temp37/temp12/meanMAXtemp/meanMINtemp/rainMAY/rainJUN/predation`) once
+  Inbal has the data, then rerun `00_build_dataset.R` + re-render
+  `02_mass_analysis.Rmd`/`05_normalized_mass_trends.Rmd` (same gotcha as
+  always). Once filled, Inbal wants Yosef's *original* 2012-2020 model
+  approach rerun as-is through 2026 first (to show him, issues-and-all),
+  before any redesign - see her framing above. The statistical-approach
+  discussion below is about what comes *after* that first as-is extension,
+  not a blocker for it.
+- Separately, still unresolved: Inbal wants to *discuss and agree on a
+  statistical approach* for the weather parameters before building a new,
+  better model - explicitly flagged as a design conversation to have, not
+  something to jump into implementing. The core problem: even once
+  2021-2026 `temp37/temp12/meanMAXtemp/meanMINtemp/rainMAY/rainJUN/predation`
+  is filled in, that's only 11 more years (`newcastle` is the one column
+  already confirmed/done for 2021-2026) - any weather model is capped at
+  **n=17 years total** (2010-2026), or fewer per species depending on which
+  years have both a valid response and full predictors. This directly
+  connects to the AICc small-sample
   instability already documented in
   `survival_analysis/yosef_analysis/YOSEF_2020_ANALYSIS.md` §5 (the
   correction term `2k(k+1)/(n-k-1)` explodes as k approaches n - already

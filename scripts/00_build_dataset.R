@@ -22,6 +22,10 @@
 #     בעתלית - רב שנתי")
 #   - data_raw/data_2010-2020_legacy.csv -> weather, predation, newcastle,
 #     2010-2020 (verified correct; NOT the buggy file)
+#   - data_raw/weather_predation_2021_2026.csv -> same columns, 2021-2026,
+#     filled in by Inbal directly (not from Yosef's original files - those
+#     years don't exist there, see NOTES.md "Open items" / issue #1 and #3).
+#     Still NA until filled in except newcastle, confirmed "no" throughout.
 #   - data_raw/data1_2012-2020_legacy.csv -> pre-breeding body mass only
 #     (hirMASS/albMASS columns are NOT affected by the bug; everything else
 #     in that file is re-derived instead of trusted, see NOTES.md). NOTE:
@@ -67,10 +71,16 @@ pairs_raw$pairs_method <- recode(pairs_raw$pairs_method,
   "שתי מצלמות" = "2 cameras"
 )
 
-# ---- 3. weather / predation / newcastle, 2010-2020 (verified source) -------
+# ---- 3. weather / predation / newcastle, 2010-2026 --------------------------
+# 2010-2020 from the verified legacy source; 2021-2026 filled in by Inbal
+# directly (Yosef's files don't cover those years) in a separate csv so the
+# "legacy" file stays an exact copy of the original verified source.
 legacy <- read.csv(file.path(raw_dir, "data_2010-2020_legacy.csv"), stringsAsFactors = FALSE)
-weather <- legacy %>%
-  select(year, temp37, temp12, meanMAXtemp, meanMINtemp, rainMAY, rainJUN, predation, newcastle)
+recent <- read.csv(file.path(raw_dir, "weather_predation_2021_2026.csv"), stringsAsFactors = FALSE)
+weather <- bind_rows(
+  legacy %>% select(year, temp37, temp12, meanMAXtemp, meanMINtemp, rainMAY, rainJUN, predation, newcastle),
+  recent %>% select(year, temp37, temp12, meanMAXtemp, meanMINtemp, rainMAY, rainJUN, predation, newcastle)
+)
 
 # ---- 4. pre-breeding body mass, 2012-2020 -----------------------------------
 # Only hirMASS/albMASS are trusted from data1.csv - the temp/predation columns
