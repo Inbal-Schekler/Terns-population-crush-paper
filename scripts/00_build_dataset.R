@@ -24,30 +24,32 @@
 #     meanMAXtemp/meanMINtemp/rainMAY/rainJUN), predation, newcastle,
 #     2010-2020 (verified correct; NOT the buggy file). This is Yosef's
 #     original source and is kept completely untouched/unextended - see
-#     the _ims columns below for a consistent-method alternative spanning
-#     both the legacy and new years.
+#     the _inb columns below for a consistent-method alternative spanning
+#     the full 2010-2026 range.
 #   - data_raw/weather_predation_2021_2026.csv -> predation/newcastle only,
 #     2021-2026, filled in by Inbal directly from field knowledge (not from
 #     Yosef's original files - those years don't exist there, see NOTES.md
 #     "Open items" / issue #1 and #3). temp/rain are NOT in this file
-#     anymore (moved to weather_ims below) since Yosef's own temp/rain
+#     anymore (moved to weather_inb below) since Yosef's own temp/rain
 #     method for 2021-2026 is unknown/unavailable - no legacy-equivalent
 #     exists for those years, only the self-computed IMS version.
-#   - data_raw/weather_ims_2014_2026.csv -> temp37_ims/temp12_ims/
-#     meanMAXtemp_ims/meanMINtemp_ims/rainMAY_ims/rainJUN_ims, 2014-2026.
-#     Computed by Inbal from raw IMS (ims.gov.il) 10-min station data,
-#     station "עין כרמל" (nearest to Atlit) - local IDT calendar day,
-#     temp37 = days with daily max >=37C, temp12 = days with daily min
-#     <12C, mean/sum over May-June. Validated against the legacy columns
-#     above for the 7 overlapping years (2014-2020): temp12 exact in all
-#     7, meanMAXtemp within 0.1C every year, meanMINtemp consistently
-#     ~0.1-0.3C lower (small systematic bias, not a station/method error),
-#     temp37 off by 1 in 2 of 7 years (borderline day-count metric),
-#     rainMAY mostly close but 2015 is a real outlier (1.9 vs legacy's 9,
-#     unexplained). Added as NEW columns alongside the legacy ones (not
-#     replacing them) per Inbal - see feedback-additive-analysis-iteration
-#     - so both methods can be compared before picking one for modeling.
-#     No 2010-2013 rows (not downloaded, legacy-only for those years).
+#   - data_raw/weather_inb_2010_2026.csv -> temp37_inb/temp12_inb/
+#     meanMAXtemp_inb/meanMINtemp_inb/rainMAY_inb/rainJUN_inb, full 2010-2026
+#     (scripts/01_build_weather_inb.R). Computed by Inbal from raw IMS
+#     (ims.gov.il) 10-min station data, station "עין כרמל" (nearest to
+#     Atlit) - local IDT calendar day, temp37 = days with daily max >=37C,
+#     temp12 = days with daily min <12C, mean/sum over May-June. Originally
+#     built 2014-2026 only (as far as raw downloads went then); extended to
+#     2010-2026 once the 2010-2013 raw files were added. Validated against
+#     the legacy columns above for all 11 overlapping years (2010-2020):
+#     temp12 exact in all 11, meanMAXtemp within 0.1C every year, meanMINtemp
+#     consistently ~0.1-0.3C lower (small systematic bias, not a station/
+#     method error), temp37 off by 1 in 3 of 11 years (borderline day-count
+#     metric), rainMAY the noisiest metric - 2013 (-4.8mm) and 2015 (-7.1mm)
+#     are real outliers, unexplained. Added as NEW columns alongside the
+#     legacy ones (not replacing them) per Inbal - see
+#     feedback-additive-analysis-iteration - so both methods can be compared
+#     before picking one for modeling.
 #   - data_raw/data1_2012-2020_legacy.csv -> pre-breeding body mass only
 #     (hirMASS/albMASS columns are NOT affected by the bug; everything else
 #     in that file is re-derived instead of trusted, see NOTES.md). NOTE:
@@ -96,8 +98,8 @@ pairs_raw$pairs_method <- recode(pairs_raw$pairs_method,
 # ---- 3. weather / predation / newcastle, 2010-2026 --------------------------
 # Legacy temp/rain (2010-2020, Yosef's original method/source) kept exactly
 # as-is, not extended - predation/newcastle extended to 2021-2026 by Inbal
-# directly. See weather_ims below for the self-computed temp/rain columns
-# that DO span the full 2014-2026 range with one consistent method.
+# directly. See weather_inb below for the self-computed temp/rain columns
+# that DO span the full 2010-2026 range with one consistent method.
 legacy <- read.csv(file.path(raw_dir, "data_2010-2020_legacy.csv"), stringsAsFactors = FALSE)
 recent <- read.csv(file.path(raw_dir, "weather_predation_2021_2026.csv"), stringsAsFactors = FALSE)
 weather <- bind_rows(
@@ -107,8 +109,8 @@ weather <- bind_rows(
     select(year, temp37, temp12, meanMAXtemp, meanMINtemp, rainMAY, rainJUN, predation, newcastle)
 )
 
-# ---- 3b. self-computed weather, consistent method, 2014-2026 ---------------
-weather_ims <- read.csv(file.path(raw_dir, "weather_ims_2014_2026.csv"), stringsAsFactors = FALSE)
+# ---- 3b. self-computed weather, consistent method, 2010-2026 ---------------
+weather_inb <- read.csv(file.path(raw_dir, "weather_inb_2010_2026.csv"), stringsAsFactors = FALSE)
 
 # ---- 4. pre-breeding body mass, 2012-2020 -----------------------------------
 # Only hirMASS/albMASS are trusted from data1.csv - the temp/predation columns
@@ -120,7 +122,7 @@ mass <- legacy1 %>% select(year, hirMASS, albMASS)
 master <- chicks %>%
   full_join(pairs_raw, by = "year") %>%
   full_join(weather, by = "year") %>%
-  full_join(weather_ims, by = "year") %>%
+  full_join(weather_inb, by = "year") %>%
   full_join(mass, by = "year") %>%
   arrange(year) %>%
   mutate(
