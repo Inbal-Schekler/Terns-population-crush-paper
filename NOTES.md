@@ -1083,67 +1083,104 @@ corrected for in any script.
   the workbook. Closed as a known, permanent gap rather than left as a
   thing to keep chasing.
 
+### Session 8 (2026-10-13)
+- **Closed the weather gap for real: self-computed `_inb` weather now spans
+  the full 2010-2026**, not just 2014-2026. Inbal downloaded the missing
+  raw IMS station files for 2010-2013 (same source/station as Session 7 -
+  עין כרמל). Caught mid-session that the committed `weather_ims_2014_2026.csv`
+  had never actually had a saved build script (Session 7's version was run
+  ad hoc) - wrote `scripts/01_build_weather_inb.R` as the real, rerunnable
+  version. One parsing gotcha hit while extending to the older years: some
+  years use a literal `"-"` for a missing 10-min reading, which collided
+  with `dplyr::bind_rows()`'s cross-year type checking (numeric in years
+  without gaps, character in years with them) - fixed by reading every
+  numeric column as character first, then converting explicitly with `"-"`
+  mapped to `NA`.
+  - Re-validated against Yosef's real 2010-2013 values using the same
+    method as Session 7's check: same signature as before (temp12 exact,
+    meanMAXtemp within 0.1C, rainMAY the noisiest - 2013 is a new outlier
+    at -4.8mm, same magnitude as 2015's already-flagged -7.1mm).
+- **Renamed the `_ims` suffix to `_inb`** (Inbal's initials) per her
+  correction - `_ims` wasn't a distinguishing name since Yosef's own
+  legacy weather values also ultimately come from IMS stations; `_inb`
+  specifically marks "the version Inbal self-computed," which is the
+  actual distinction that matters. Renamed everywhere: the data file
+  (`weather_inb_2010_2026.csv`), the build script, `00_build_dataset.R`,
+  and the columns themselves in `master_dataset_2010_2026.csv`.
+  - Mid-session gotcha caught by Inbal: an early pass renamed the *file*
+    but not its internal column headers, then rebuilding the master
+    dataset silently reverted to stale `_ims`-named columns with old
+    2014-2026-only values. Fixed by regenerating the `_inb` file's actual
+    contents before rebuilding downstream - **renaming a file is not the
+    same as regenerating what's inside it**, worth remembering for any
+    future rename-in-place like this.
+  - Rebuilt + re-rendered the mass Rmds again afterward (standing gotcha),
+    verified via `git diff` that only the renamed/newly-filled columns
+    changed.
+- **Reran Yosef's original GLM/AICc model sets through 2026, issues and
+  all** (`survival_analysis/yosef_analysis/03_replicate_through_2026.R`,
+  the "immediate next step" flagged at the end of Session 7). Two tiers:
+  TIER 1 is a reduced, legacy-only comparison (just predation/newcastle
+  for Block A, just predation/competition/mass for Block B - the
+  predictors with no gap past 2020) over the full extended range. TIER 2,
+  once the `_inb` columns covered 2010-2026, became the real target: the
+  *full* original 27/23-model structure with weather included, now
+  running the whole range (Block A 2010-2026 n=17, Block B 2012-2026
+  n=15) instead of being capped at 2014.
+  - **Headline finding**: Common Tern's Block B result flips from an even
+    4-way split in the original 2012-2020 window (weights 0.12-0.21 each)
+    to a single dominant model - **competition + hot days (`temp37`),
+    weight 0.427**, nearly double the runner-up (competition alone,
+    0.233). This is the most decisive single result anywhere in the
+    rerun, and it gets *stronger*, not weaker, with the extra years.
+    Little Tern goes the opposite direction in both blocks - gets
+    *muddier* with more data (no model above 0.21 anywhere), and
+    predation (Yosef's most consistently cited predictor in the original
+    slides) loses its edge for both species once the recent years are in.
+  - Posted full writeup + tables to
+    [issue #1](https://github.com/Inbal-Schekler/Terns-population-crush-paper/issues/1#issuecomment-6143448271)
+    (also updated its checklist: weather, predation/Newcastle, and the
+    2022 pairs gap now checked off; mass data and the 2026 Little Tern
+    chick count confirmation still open, both still need Yosef directly).
+  - Does NOT modify `01_replicate_2020_baseline.R`'s original tables -
+    kept as a separate script per the standing additive-iteration
+    preference, so the original 2010-2020/2012-2020 numbers stay directly
+    citable alongside the extended ones.
+
 ### Next session - pick up here (survival analysis)
-- **Weather/predation/Newcastle gap is now filled for 2021-2026** (both
-  the legacy-style columns via `predation`/`newcastle` only, and the new
-  `_ims`-suffixed temp/rain columns spanning 2014-2026 - see Session 7
-  above). **Immediate next step**: Inbal wants Yosef's *original*
-  2012-2020 model approach rerun as-is through 2026 first (to show him,
-  issues-and-all), before any redesign - see her framing above. Two weather
-  sources now exist (legacy 2010-2020-only vs. `_ims` 2014-2026) - for
-  this as-is replication, default to whichever matches what Yosef's
-  original model actually used (the legacy columns), extended only as far
-  as they go; a decision on whether/how to bring in the `_ims` columns
-  belongs to the redesign discussion below, not this replication step.
-- Separately, still unresolved: Inbal wants to *discuss and agree on a
-  statistical approach* for the weather parameters before building a new,
-  better model - explicitly flagged as a design conversation to have, not
-  something to jump into implementing. The core problem: even with
-  2021-2026 predictors available now, that's still a small-n problem -
-  any weather model is capped at **n=17 years total** (2010-2026, using
-  the `_ims` columns), or fewer per species depending on which years have
-  both a valid response and full predictors. This directly connects to
-  the AICc small-sample
-  instability already documented in
+- **The "as-is through 2026" replication Inbal asked for is now done**
+  (Session 8 above) - weather/predation/Newcastle/competition/mass all
+  extend through 2026 one way or another, and Yosef's exact original model
+  structure has been rerun on the full range. This was explicitly a
+  "show him, issues and all" step, not the final analysis.
+- **The design conversation flagged at the end of Session 7 is still
+  outstanding and is the real next step**: agree on a small-n statistical
+  approach before building a new, better model - explicitly NOT something
+  to jump into implementing without discussing first. The core problem:
+  even with the full 2010-2026 window, any weather model is capped at
+  **n=17 years total** (fewer per species/block depending on which years
+  have a valid response and full predictors) - directly connects to the
+  AICc small-sample instability already documented in
   `survival_analysis/yosef_analysis/YOSEF_2020_ANALYSIS.md` §5 (the
-  correction term `2k(k+1)/(n-k-1)` explodes as k approaches n - already
-  a real problem in Yosef's original n=9-11 models) and to the still-open
-  question logged at the end of Session 5 below: whether to keep doing
-  season-level AICc model selection at all at this sample size, vs.
-  pre-registering a small candidate set instead of a full combinatorial
-  search, vs. using the individual-level ringing data for a proper
-  capture-recapture model instead of season-total counts. Worth deciding
-  this before picking predictors, not after.
-- Once that's settled: chick-count source itself is ready either way
-  (raw+normalized, both in `master_dataset_2010_2026.csv`), so the
-  weather-parameter work can proceed as soon as the approach is agreed and
-  (separately) Yosef provides 2021-2026 weather/predation/Newcastle data.
+  correction term `2k(k+1)/(n-k-1)` explodes as k approaches n) and to the
+  still-open question from Session 5: whether to keep doing season-level
+  AICc model selection at all at this sample size, vs. pre-registering a
+  small candidate set instead of a full combinatorial search, vs. using
+  the individual-level ringing data for a proper capture-recapture model
+  instead of season-total counts. Worth deciding this before picking a
+  final predictor set, not after - Session 8's rerun already shows how
+  much the "winning" model can swing with just a few more years of data
+  at this n, which is itself a point in favor of having this conversation
+  rather than continuing to iterate on model structure alone.
 - Open question for Yosef, logged on #12: is there a non-effort reason to
   treat 2010 specially (first season, methodology/coverage) - its ringing
   effort was NOT unusually low, so that's not the explanation if 2010
   ends up excluded.
-- Continue the "return to what Yosef did, with the years passed" pass:
-  Block A (weather/predation/newcastle) and the mass-condition model
-  still only run 2010-2020/2012-2020 - same extension approach (real
-  data, not slide-reported numbers, full years where available) needed
-  there. Note issues #1/#3 still block the *weather/predation/Newcastle*
-  side specifically (no 2021-2026 values exist anywhere yet - needs
-  Yosef), so that part of Block A can't extend yet; competition and mass
-  terms aren't blocked by that and can proceed.
-- After the like-for-like extension is done: the bigger open question
-  from this session's earlier discussion (not yet acted on) - whether to
-  keep doing season-level AICc model selection at all (n=15 is still
-  small, same AICc small-sample issue as §5 describes, just less severe),
-  pre-register a small candidate set instead of a full combinatorial one,
-  and/or use the individual-level ringing data
-  (`ringing_data_raw.xlsx`, 66,414 records) for a proper capture-recapture
-  survival model if the analysis is meant to be about individual survival
-  rather than season-total chick counts.
 - Not started yet: choosing the actual new/better parameter set for the
   survival analysis (the point of redoing it - see issue #2's literature
   review, still not started, for what predictors are standard in the
   field).
-- Issues #1/#3 block extending the GLM past 2020: still need weather/
-  predation/Newcastle for 2021-2026 and the density-index design from
-  Yosef (see "Open items" above) before a new model can use the full
-  2010-2026 window instead of being stuck at 2020 like the original.
+- Still open on issue #1: mass data (`hirMASS`/`albMASS`) 2021-2026 and
+  the raw individual measurements behind the existing 2012-2020 numbers -
+  needs Yosef directly, no documentation or raw records found anywhere in
+  the files he sent.
