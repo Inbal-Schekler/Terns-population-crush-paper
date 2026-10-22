@@ -127,6 +127,14 @@ print(sel_alb_B_ext)
 # variable swap of the legacy weather names in 01's rhs_list for their
 # `_inb` equivalents; every other predictor/model-structure choice is
 # identical to 01.
+#
+# SST (sea surface temperature, Copernicus CMEMS, nearest grid point to
+# Atlit) added as three more candidates - meanSST_inb/meanMAXsst_inb/
+# meanMINsst_inb - per Inbal's choice to treat it symmetrically in both
+# blocks: one-at-a-time in Block A (same pattern as the 6 existing weather
+# vars), and as additional full crossings per species in Block B (same
+# pattern as temp37/temp12 for hir, meanMINtemp/meanMAXtemp for alb) -
+# Block B grows from 2 crossed weather vars/species to 5.
 # ------------------------------------------------------------------------
 ims_swap <- function(rhs_list) {
   pairs <- list(c("temp37", "temp37_inb"), c("temp12", "temp12_inb"),
@@ -138,7 +146,8 @@ ims_swap <- function(rhs_list) {
 
 dataA_inb <- master %>% filter(year >= 2010, year <= 2026) %>%
   select(year, hir = chicks_hir, alb = chicks_alb, predation, newcastle,
-         temp37_inb, temp12_inb, meanMAXtemp_inb, meanMINtemp_inb, rainMAY_inb, rainJUN_inb)
+         temp37_inb, temp12_inb, meanMAXtemp_inb, meanMINtemp_inb, rainMAY_inb, rainJUN_inb,
+         meanSST_inb, meanMAXsst_inb, meanMINsst_inb)
 stopifnot(nrow(dataA_inb) == 17, !anyNA(dataA_inb))
 
 rhs_block_a <- c(
@@ -150,7 +159,13 @@ rhs_block_a <- c(
   "rainMAY", "predation + rainMAY", "newcastle + rainMAY", "predation + newcastle + rainMAY",
   "rainJUN", "predation + rainJUN", "newcastle + rainJUN", "predation + newcastle + rainJUN"
 )
-rhs_block_a_inb <- ims_swap(rhs_block_a)
+# SST candidates: already `_inb`-named (no legacy equivalent to swap from),
+# added one-at-a-time in the same predation/newcastle crossing pattern as
+# the 6 vars above.
+rhs_block_a_sst <- unlist(lapply(c("meanSST_inb", "meanMAXsst_inb", "meanMINsst_inb"), function(v) c(
+  v, paste("predation +", v), paste("newcastle +", v), paste("predation + newcastle +", v)
+)))
+rhs_block_a_inb <- c(ims_swap(rhs_block_a), rhs_block_a_sst)
 
 models_hir_A_inb <- fit_models("hir", rhs_block_a_inb, dataA_inb)
 models_alb_A_inb <- fit_models("alb", rhs_block_a_inb, dataA_inb)
@@ -169,8 +184,20 @@ print(sel_alb_A_inb)
 dataB_inb <- master %>% filter(year >= 2012, year <= 2026) %>%
   select(year, hir = chicks_hir, alb = chicks_alb, predation,
          hirTWOyears, albTWOyears, hirMASS, albMASS,
-         temp37_inb, temp12_inb, meanMAXtemp_inb, meanMINtemp_inb)
+         temp37_inb, temp12_inb, meanMAXtemp_inb, meanMINtemp_inb,
+         meanSST_inb, meanMAXsst_inb, meanMINsst_inb)
 stopifnot(nrow(dataB_inb) == 15, !anyNA(dataB_inb))
+
+# Crosses `var` with every subset (incl. empty, i.e. `var` alone) of
+# `base_vars` - same pattern already used by temp37/temp12 (hir) and
+# meanMINtemp/meanMAXtemp (alb) below, factored out so the 3 SST vars can
+# reuse it without hand-listing 8 terms each.
+cross_with_base <- function(var, base_vars) {
+  subsets <- unlist(lapply(seq_along(base_vars), function(k) {
+    combn(base_vars, k, FUN = function(x) paste(x, collapse = " + "), simplify = TRUE)
+  }))
+  c(var, paste(subsets, "+", var))
+}
 
 rhs_block_b_hir <- c(
   "predation", "albTWOyears", "hirMASS", "temp37",
@@ -194,8 +221,13 @@ rhs_block_b_alb <- c(
   "predation + hirTWOyears + meanMAXtemp", "predation + albMASS + meanMAXtemp",
   "hirTWOyears + albMASS + meanMAXtemp", "predation + hirTWOyears + albMASS + meanMAXtemp"
 )
-rhs_block_b_hir_inb <- ims_swap(rhs_block_b_hir)
-rhs_block_b_alb_inb <- ims_swap(rhs_block_b_alb)
+rhs_block_b_hir_sst <- unlist(lapply(c("meanSST_inb", "meanMAXsst_inb", "meanMINsst_inb"),
+                                      cross_with_base, base_vars = c("predation", "albTWOyears", "hirMASS")))
+rhs_block_b_alb_sst <- unlist(lapply(c("meanSST_inb", "meanMAXsst_inb", "meanMINsst_inb"),
+                                      cross_with_base, base_vars = c("predation", "hirTWOyears", "albMASS")))
+
+rhs_block_b_hir_inb <- c(ims_swap(rhs_block_b_hir), rhs_block_b_hir_sst)
+rhs_block_b_alb_inb <- c(ims_swap(rhs_block_b_alb), rhs_block_b_alb_sst)
 
 models_hir_B_inb <- fit_models("hir", rhs_block_b_hir_inb, dataB_inb)
 models_alb_B_inb <- fit_models("alb", rhs_block_b_alb_inb, dataB_inb)
