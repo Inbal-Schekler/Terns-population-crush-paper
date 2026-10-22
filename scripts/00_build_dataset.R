@@ -50,6 +50,12 @@
 #     legacy ones (not replacing them) per Inbal - see
 #     feedback-additive-analysis-iteration - so both methods can be compared
 #     before picking one for modeling.
+#   - data_raw/sst_inb_2010_2026.csv -> meanSST_inb/meanMAXsst_inb/
+#     meanMINsst_inb, full 2010-2026, no gap (scripts/02_build_sst_inb.py).
+#     Sea surface temperature near Atlit (nearest grid point, 32.68N/34.92E)
+#     from Copernicus Marine satellite L4 SST (Mediterranean, reprocessed,
+#     daily, 0.05 deg), May-June mean/max/min per year - flagged as a
+#     candidate predictor in issue #2, missing entirely before this.
 #   - data_raw/data1_2012-2020_legacy.csv -> pre-breeding body mass only
 #     (hirMASS/albMASS columns are NOT affected by the bug; everything else
 #     in that file is re-derived instead of trusted, see NOTES.md). NOTE:
@@ -112,6 +118,15 @@ weather <- bind_rows(
 # ---- 3b. self-computed weather, consistent method, 2010-2026 ---------------
 weather_inb <- read.csv(file.path(raw_dir, "weather_inb_2010_2026.csv"), stringsAsFactors = FALSE)
 
+# ---- 3c. sea surface temperature, 2010-2026 ---------------------------------
+# Flagged as a candidate predictor in issue #2 ("sea surface temperature"
+# missing from the current set) - Inbal found the source (Copernicus Marine
+# satellite L4 SST, Mediterranean) and pulled it herself.
+# scripts/02_build_sst_inb.py - nearest grid point to Atlit, May-June mean/
+# max/min per year, full 2010-2026 range (no gap, unlike the air-temp _inb
+# columns which needed manual raw downloads year by year).
+sst_inb <- read.csv(file.path(raw_dir, "sst_inb_2010_2026.csv"), stringsAsFactors = FALSE)
+
 # ---- 4. pre-breeding body mass, 2012-2020 -----------------------------------
 # Only hirMASS/albMASS are trusted from data1.csv - the temp/predation columns
 # in that file are corrupted (see NOTES.md) and are deliberately NOT used here.
@@ -123,6 +138,7 @@ master <- chicks %>%
   full_join(pairs_raw, by = "year") %>%
   full_join(weather, by = "year") %>%
   full_join(weather_inb, by = "year") %>%
+  full_join(sst_inb, by = "year") %>%
   full_join(mass, by = "year") %>%
   arrange(year) %>%
   mutate(
