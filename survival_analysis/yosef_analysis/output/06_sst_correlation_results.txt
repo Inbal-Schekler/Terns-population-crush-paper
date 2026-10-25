@@ -1,17 +1,33 @@
-Little Tern chicks vs SST - Pearson correlation, full 2010-2026 (n=17)
-Shapiro-Wilk run first on both variables to confirm normality before trusting Pearson.
+Chicks vs SST - Pearson correlation, full 2010-2026 (n=17)
+Shapiro-Wilk run first on both variables in each pair to confirm normality before trusting Pearson.
 
+================ Common Tern ( hir ) ================
+Shapiro-Wilk, Common Tern chicks: W = 0.927, p = 0.197
+
+----- meanSST_inb -----
+Shapiro-Wilk, meanSST_inb: W = 0.879, p = 0.030
+Pearson: r = -0.017, 95% CI [-0.494, 0.467], t = -0.068, df = 15, p = 0.9469
+
+----- meanMAXsst_inb -----
+Shapiro-Wilk, meanMAXsst_inb: W = 0.976, p = 0.918
+Pearson: r = 0.086, 95% CI [-0.411, 0.544], t = 0.336, df = 15, p = 0.7415
+
+----- meanMINsst_inb -----
+Shapiro-Wilk, meanMINsst_inb: W = 0.973, p = 0.872
+Pearson: r = -0.139, 95% CI [-0.581, 0.366], t = -0.542, df = 15, p = 0.5955
+
+================ Little Tern ( alb ) ================
 Shapiro-Wilk, Little Tern chicks: W = 0.917, p = 0.130
 
-===== meanSST_inb =====
+----- meanSST_inb -----
 Shapiro-Wilk, meanSST_inb: W = 0.879, p = 0.030
 Pearson: r = -0.246, 95% CI [-0.650, 0.266], t = -0.985, df = 15, p = 0.3403
 
-===== meanMAXsst_inb =====
+----- meanMAXsst_inb -----
 Shapiro-Wilk, meanMAXsst_inb: W = 0.976, p = 0.918
 Pearson: r = -0.144, 95% CI [-0.584, 0.362], t = -0.563, df = 15, p = 0.5819
 
-===== meanMINsst_inb =====
+----- meanMINsst_inb -----
 Shapiro-Wilk, meanMINsst_inb: W = 0.973, p = 0.872
 Pearson: r = -0.472, 95% CI [-0.776, 0.011], t = -2.073, df = 15, p = 0.0558
 
