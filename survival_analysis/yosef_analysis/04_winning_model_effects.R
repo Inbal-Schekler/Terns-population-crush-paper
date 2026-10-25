@@ -9,11 +9,15 @@
 # (one panel per predictor), via cowplot (no new package deps - patchwork/
 # gridExtra aren't installed, cowplot is).
 #
-# Winning models (read off 03's output/03_replication_through_2026_results.txt):
+# Winning models, verified programmatically against the fitted model objects
+# (formula()/coef()), not read off 03's printed fixed-width table - a first
+# pass misread the Block B alb row and plotted an 11th-ranked model instead
+# of the true winner, caught 2026-10-25 when Inbal asked for the full
+# candidate tables to be regenerated the same way:
 #   Block A hir (weather-only, n=17):  hir ~ newcastle                (w=0.099)
 #   Block A alb (weather-only, n=17):  alb ~ meanMINsst_inb           (w=0.202)
 #   Block B hir (full, n=15):          hir ~ albTWOyears + temp37_inb (w=0.358)
-#   Block B alb (full, n=15):          alb ~ hirTWOyears + albMASS + meanMINsst_inb (w=0.161)
+#   Block B alb (full, n=15):          alb ~ meanMINsst_inb           (w=0.161)
 #
 # Does not modify 00/01/02/03/05's outputs; only reads the master dataset.
 # ==============================================================================
@@ -135,9 +139,9 @@ make_model_figure(m_B_hir, dataB_inb, c("albTWOyears", "temp37_inb"),
                    "Block B winner - Common Tern (hir ~ albTWOyears + temp37_inb, weight 0.358, n=15)",
                    "04_effect_blockB_hir.png")
 
-m_B_alb <- glm(alb ~ hirTWOyears + albMASS + meanMINsst_inb, family = gaussian, data = dataB_inb)
-make_model_figure(m_B_alb, dataB_inb, c("hirTWOyears", "albMASS", "meanMINsst_inb"),
-                   "Block B winner - Little Tern (alb ~ hirTWOyears + albMASS + meanMINsst_inb, weight 0.161, n=15)",
+m_B_alb <- glm(alb ~ meanMINsst_inb, family = gaussian, data = dataB_inb)
+make_model_figure(m_B_alb, dataB_inb, "meanMINsst_inb",
+                   "Block B winner - Little Tern (alb ~ meanMINsst_inb, weight 0.161, n=15)",
                    "04_effect_blockB_alb.png")
 
 cat("\nAll 4 winning-model effect figures written to", out_dir, "\n")
