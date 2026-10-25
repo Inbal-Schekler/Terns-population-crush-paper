@@ -128,13 +128,17 @@ sel_alb_B_inb <- model.sel(models_alb_B_inb)
 # ------------------------------------------------------------------------
 # Clean tables: model index -> predictors (straight from the rhs string
 # that was actually fit, not a re-read of the printed +/coefficient grid),
-# delta, weight. Verified once against formula()/coef() on the top-ranked
-# object per table before trusting this approach (see commit 67566c1).
+# AICc, delta, weight. Verified once against formula()/coef() on the
+# top-ranked object per table before trusting this approach (see commit
+# 67566c1). Sorted by AICc ascending (model.sel()'s default row order) -
+# lowest AICc = row 1 = the winning model; delta is every other row's
+# AICc minus that winning model's AICc.
 # ------------------------------------------------------------------------
 make_clean_table <- function(sel_obj, rhs_list) {
   idx <- as.integer(sub("^m", "", rownames(sel_obj)))
   data.frame(
     predictors = rhs_list[idx],
+    AICc = round(sel_obj$AICc, 2),
     delta = round(sel_obj$delta, 2),
     weight = round(sel_obj$weight, 3)
   )

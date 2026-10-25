@@ -1,0 +1,200 @@
+<details><summary><b>Block A, Common Tern (hir), full candidate table (n=39)</b></summary>
+
+| Predictors | AICc | Δ | weight |
+|---|---|---|---|
+| newcastle | 209.20 | 0.00 | 0.099 |
+| predation | 209.72 | 0.52 | 0.076 |
+| temp37_inb | 210.45 | 1.25 | 0.053 |
+| temp12_inb | 210.54 | 1.33 | 0.051 |
+| newcastle + temp37_inb | 210.54 | 1.34 | 0.051 |
+| rainMAY_inb | 210.75 | 1.54 | 0.046 |
+| meanMINsst_inb | 211.00 | 1.80 | 0.040 |
+| rainJUN_inb | 211.05 | 1.84 | 0.039 |
+| meanMAXtemp_inb | 211.18 | 1.98 | 0.037 |
+| meanMAXsst_inb | 211.20 | 2.00 | 0.036 |
+| predation + rainMAY_inb | 211.24 | 2.04 | 0.036 |
+| meanMINtemp_inb | 211.30 | 2.09 | 0.035 |
+| meanSST_inb | 211.33 | 2.12 | 0.034 |
+| newcastle + meanMAXtemp_inb | 211.75 | 2.55 | 0.028 |
+| newcastle + temp12_inb | 211.79 | 2.58 | 0.027 |
+| newcastle + rainMAY_inb | 211.80 | 2.59 | 0.027 |
+| predation + newcastle | 212.04 | 2.84 | 0.024 |
+| newcastle + rainJUN_inb | 212.13 | 2.92 | 0.023 |
+| predation + temp37_inb | 212.23 | 3.02 | 0.022 |
+| newcastle + meanMINsst_inb | 212.49 | 3.29 | 0.019 |
+| predation + temp12_inb | 212.59 | 3.39 | 0.018 |
+| newcastle + meanMAXsst_inb | 212.62 | 3.42 | 0.018 |
+| newcastle + meanSST_inb | 212.66 | 3.46 | 0.018 |
+| newcastle + meanMINtemp_inb | 212.69 | 3.48 | 0.017 |
+| predation + meanMAXsst_inb | 212.93 | 3.73 | 0.015 |
+| predation + rainJUN_inb | 213.06 | 3.86 | 0.014 |
+| predation + meanSST_inb | 213.11 | 3.90 | 0.014 |
+| predation + meanMAXtemp_inb | 213.11 | 3.90 | 0.014 |
+| predation + meanMINtemp_inb | 213.13 | 3.92 | 0.014 |
+| predation + meanMINsst_inb | 213.16 | 3.95 | 0.014 |
+| predation + newcastle + temp37_inb | 214.18 | 4.97 | 0.008 |
+| predation + newcastle + rainMAY_inb | 214.27 | 5.07 | 0.008 |
+| predation + newcastle + temp12_inb | 215.40 | 6.20 | 0.004 |
+| predation + newcastle + meanMAXtemp_inb | 215.49 | 6.28 | 0.004 |
+| predation + newcastle + rainJUN_inb | 215.79 | 6.58 | 0.004 |
+| predation + newcastle + meanMAXsst_inb | 216.00 | 6.80 | 0.003 |
+| predation + newcastle + meanMINsst_inb | 216.11 | 6.90 | 0.003 |
+| predation + newcastle + meanMINtemp_inb | 216.14 | 6.94 | 0.003 |
+| predation + newcastle + meanSST_inb | 216.15 | 6.95 | 0.003 |
+
+</details>
+
+<details><summary><b>Block A, Little Tern (alb), full candidate table (n=39)</b></summary>
+
+| Predictors | AICc | Δ | weight |
+|---|---|---|---|
+| meanMINsst_inb | 170.42 | 0.00 | 0.202 |
+| meanMAXtemp_inb | 171.87 | 1.45 | 0.097 |
+| predation | 172.58 | 2.16 | 0.069 |
+| predation + meanMINsst_inb | 172.87 | 2.45 | 0.059 |
+| rainMAY_inb | 173.00 | 2.58 | 0.055 |
+| predation + meanMAXtemp_inb | 173.20 | 2.78 | 0.050 |
+| meanSST_inb | 173.64 | 3.22 | 0.040 |
+| rainJUN_inb | 173.83 | 3.41 | 0.037 |
+| newcastle + meanMINsst_inb | 173.87 | 3.46 | 0.036 |
+| meanMINtemp_inb | 174.11 | 3.70 | 0.032 |
+| temp12_inb | 174.28 | 3.86 | 0.029 |
+| meanMAXsst_inb | 174.35 | 3.93 | 0.028 |
+| temp37_inb | 174.69 | 4.27 | 0.024 |
+| newcastle | 174.70 | 4.28 | 0.024 |
+| newcastle + meanMAXtemp_inb | 174.90 | 4.48 | 0.022 |
+| predation + temp12_inb | 175.29 | 4.87 | 0.018 |
+| predation + rainMAY_inb | 175.30 | 4.88 | 0.018 |
+| predation + rainJUN_inb | 175.44 | 5.02 | 0.016 |
+| predation + meanMINtemp_inb | 175.55 | 5.13 | 0.015 |
+| predation + meanSST_inb | 175.61 | 5.19 | 0.015 |
+| predation + newcastle | 175.75 | 5.33 | 0.014 |
+| predation + meanMAXsst_inb | 175.85 | 5.43 | 0.013 |
+| predation + temp37_inb | 176.05 | 5.63 | 0.012 |
+| newcastle + rainMAY_inb | 176.48 | 6.07 | 0.010 |
+| predation + newcastle + meanMINsst_inb | 176.60 | 6.18 | 0.009 |
+| newcastle + meanSST_inb | 177.11 | 6.69 | 0.007 |
+| newcastle + rainJUN_inb | 177.29 | 6.87 | 0.007 |
+| predation + newcastle + meanMAXtemp_inb | 177.32 | 6.90 | 0.006 |
+| newcastle + meanMINtemp_inb | 177.58 | 7.16 | 0.006 |
+| newcastle + temp12_inb | 177.76 | 7.34 | 0.005 |
+| newcastle + meanMAXsst_inb | 177.82 | 7.40 | 0.005 |
+| newcastle + temp37_inb | 178.18 | 7.76 | 0.004 |
+| predation + newcastle + temp12_inb | 179.03 | 8.61 | 0.003 |
+| predation + newcastle + rainMAY_inb | 179.15 | 8.73 | 0.003 |
+| predation + newcastle + rainJUN_inb | 179.37 | 8.95 | 0.002 |
+| predation + newcastle + meanMINtemp_inb | 179.44 | 9.02 | 0.002 |
+| predation + newcastle + meanSST_inb | 179.54 | 9.12 | 0.002 |
+| predation + newcastle + meanMAXsst_inb | 179.71 | 9.29 | 0.002 |
+| predation + newcastle + temp37_inb | 179.79 | 9.37 | 0.002 |
+
+</details>
+
+<details><summary><b>Block B, Common Tern (hir), full candidate table (n=47)</b></summary>
+
+| Predictors | AICc | Δ | weight |
+|---|---|---|---|
+| albTWOyears + temp37_inb | 179.90 |  0.00 | 0.358 |
+| albTWOyears | 181.11 |  1.21 | 0.195 |
+| albTWOyears + hirMASS + temp37_inb | 183.20 |  3.29 | 0.069 |
+| albTWOyears + temp12_inb | 183.97 |  4.07 | 0.047 |
+| albTWOyears + meanMAXsst_inb | 184.17 |  4.26 | 0.042 |
+| predation + albTWOyears + temp37_inb | 184.54 |  4.64 | 0.035 |
+| albTWOyears + meanSST_inb | 184.75 |  4.85 | 0.032 |
+| predation + albTWOyears | 184.87 |  4.97 | 0.030 |
+| albTWOyears + meanMINsst_inb | 184.89 |  4.99 | 0.030 |
+| albTWOyears + hirMASS | 184.92 |  5.02 | 0.029 |
+| temp12_inb | 186.40 |  6.50 | 0.014 |
+| predation | 186.68 |  6.77 | 0.012 |
+| temp37_inb | 186.76 |  6.86 | 0.012 |
+| meanMINsst_inb | 186.98 |  7.08 | 0.010 |
+| hirMASS | 187.41 |  7.51 | 0.008 |
+| meanSST_inb | 187.46 |  7.56 | 0.008 |
+| meanMAXsst_inb | 187.53 |  7.62 | 0.008 |
+| albTWOyears + hirMASS + temp12_inb | 188.26 |  8.36 | 0.005 |
+| predation + albTWOyears + temp12_inb | 188.63 |  8.72 | 0.005 |
+| predation + albTWOyears + hirMASS + temp37_inb | 188.65 |  8.74 | 0.005 |
+| albTWOyears + hirMASS + meanMAXsst_inb | 188.77 |  8.86 | 0.004 |
+| predation + albTWOyears + meanMAXsst_inb | 188.83 |  8.93 | 0.004 |
+| predation + albTWOyears + meanSST_inb | 189.40 |  9.50 | 0.003 |
+| albTWOyears + hirMASS + meanSST_inb | 189.41 |  9.50 | 0.003 |
+| predation + albTWOyears + meanMINsst_inb | 189.47 |  9.57 | 0.003 |
+| predation + albTWOyears + hirMASS | 189.53 |  9.63 | 0.003 |
+| albTWOyears + hirMASS + meanMINsst_inb | 189.55 |  9.64 | 0.003 |
+| predation + temp12_inb | 189.61 |  9.71 | 0.003 |
+| predation + temp37_inb | 189.79 |  9.89 | 0.003 |
+| hirMASS + temp12_inb | 190.10 | 10.20 | 0.002 |
+| predation + meanMINsst_inb | 190.24 | 10.34 | 0.002 |
+| predation + hirMASS | 190.44 | 10.54 | 0.002 |
+| predation + meanMAXsst_inb | 190.45 | 10.54 | 0.002 |
+| predation + meanSST_inb | 190.50 | 10.59 | 0.002 |
+| hirMASS + temp37_inb | 190.58 | 10.67 | 0.002 |
+| hirMASS + meanMINsst_inb | 190.73 | 10.83 | 0.002 |
+| hirMASS + meanMAXsst_inb | 191.18 | 11.27 | 0.001 |
+| hirMASS + meanSST_inb | 191.21 | 11.30 | 0.001 |
+| predation + hirMASS + temp12_inb | 193.10 | 13.19 | 0.000 |
+| predation + albTWOyears + hirMASS + temp12_inb | 193.67 | 13.77 | 0.000 |
+| predation + hirMASS + temp37_inb | 193.99 | 14.08 | 0.000 |
+| predation + albTWOyears + hirMASS + meanMAXsst_inb | 194.55 | 14.65 | 0.000 |
+| predation + hirMASS + meanMINsst_inb | 194.87 | 14.96 | 0.000 |
+| predation + hirMASS + meanMAXsst_inb | 195.08 | 15.18 | 0.000 |
+| predation + hirMASS + meanSST_inb | 195.10 | 15.20 | 0.000 |
+| predation + albTWOyears + hirMASS + meanSST_inb | 195.21 | 15.30 | 0.000 |
+| predation + albTWOyears + hirMASS + meanMINsst_inb | 195.30 | 15.40 | 0.000 |
+
+</details>
+
+<details><summary><b>Block B, Little Tern (alb), full candidate table (n=47)</b></summary>
+
+| Predictors | AICc | Δ | weight |
+|---|---|---|---|
+| meanMINsst_inb | 151.99 |  0.00 | 0.161 |
+| hirTWOyears + albMASS | 152.75 |  0.76 | 0.110 |
+| hirTWOyears | 153.11 |  1.12 | 0.092 |
+| albMASS + meanMINsst_inb | 154.15 |  2.17 | 0.055 |
+| hirTWOyears + meanMINsst_inb | 154.40 |  2.41 | 0.048 |
+| meanMAXtemp_inb | 154.63 |  2.64 | 0.043 |
+| albMASS | 154.81 |  2.82 | 0.039 |
+| predation | 154.97 |  2.99 | 0.036 |
+| predation + meanMINsst_inb | 155.17 |  3.18 | 0.033 |
+| meanSST_inb | 155.30 |  3.31 | 0.031 |
+| hirTWOyears + albMASS + meanMINsst_inb | 155.72 |  3.73 | 0.025 |
+| hirTWOyears + meanMAXtemp_inb | 155.77 |  3.78 | 0.024 |
+| meanMAXsst_inb | 156.04 |  4.06 | 0.021 |
+| predation + hirTWOyears | 156.12 |  4.13 | 0.020 |
+| hirTWOyears + meanMINtemp_inb | 156.22 |  4.23 | 0.019 |
+| meanMINtemp_inb | 156.23 |  4.25 | 0.019 |
+| predation + hirTWOyears + albMASS | 156.52 |  4.53 | 0.017 |
+| hirTWOyears + albMASS + meanMINtemp_inb | 156.58 |  4.59 | 0.016 |
+| predation + meanMAXtemp_inb | 156.67 |  4.68 | 0.015 |
+| predation + albMASS | 156.69 |  4.70 | 0.015 |
+| hirTWOyears + meanSST_inb | 156.71 |  4.73 | 0.015 |
+| hirTWOyears + meanMAXsst_inb | 156.87 |  4.88 | 0.014 |
+| hirTWOyears + albMASS + meanMAXtemp_inb | 157.06 |  5.08 | 0.013 |
+| albMASS + meanMAXtemp_inb | 157.21 |  5.22 | 0.012 |
+| hirTWOyears + albMASS + meanMAXsst_inb | 157.36 |  5.38 | 0.011 |
+| hirTWOyears + albMASS + meanSST_inb | 157.41 |  5.43 | 0.011 |
+| albMASS + meanSST_inb | 157.60 |  5.61 | 0.010 |
+| predation + albMASS + meanMINsst_inb | 157.96 |  5.97 | 0.008 |
+| predation + meanSST_inb | 158.11 |  6.12 | 0.008 |
+| albMASS + meanMINtemp_inb | 158.26 |  6.28 | 0.007 |
+| albMASS + meanMAXsst_inb | 158.26 |  6.28 | 0.007 |
+| predation + meanMAXsst_inb | 158.38 |  6.39 | 0.007 |
+| predation + meanMINtemp_inb | 158.50 |  6.51 | 0.006 |
+| predation + hirTWOyears + meanMINsst_inb | 158.66 |  6.67 | 0.006 |
+| predation + hirTWOyears + meanMAXtemp_inb | 159.45 |  7.46 | 0.004 |
+| predation + albMASS + meanMAXtemp_inb | 159.84 |  7.86 | 0.003 |
+| predation + hirTWOyears + meanMINtemp_inb | 160.19 |  8.20 | 0.003 |
+| predation + hirTWOyears + meanSST_inb | 160.71 |  8.72 | 0.002 |
+| predation + hirTWOyears + meanMAXsst_inb | 160.74 |  8.75 | 0.002 |
+| predation + albMASS + meanSST_inb | 160.94 |  8.95 | 0.002 |
+| predation + hirTWOyears + albMASS + meanMINsst_inb | 161.01 |  9.02 | 0.002 |
+| predation + albMASS + meanMINtemp_inb | 161.07 |  9.09 | 0.002 |
+| predation + albMASS + meanMAXsst_inb | 161.14 |  9.15 | 0.002 |
+| predation + hirTWOyears + albMASS + meanMINtemp_inb | 161.63 |  9.64 | 0.001 |
+| predation + hirTWOyears + albMASS + meanMAXtemp_inb | 161.90 |  9.91 | 0.001 |
+| predation + hirTWOyears + albMASS + meanSST_inb | 162.28 | 10.29 | 0.001 |
+| predation + hirTWOyears + albMASS + meanMAXsst_inb | 162.29 | 10.30 | 0.001 |
+
+</details>
+
