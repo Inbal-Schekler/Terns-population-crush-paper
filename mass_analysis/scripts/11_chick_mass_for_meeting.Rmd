@@ -1,0 +1,162 @@
+---
+title: "Common Tern chick mass: simple version for the non-expert meeting"
+subtitle: "Plain-language companion to issue #9/#10's chick mass decline - no jargon, grams only"
+date: "`r format(Sys.Date())`"
+output:
+  html_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                       fig.width = 9, fig.height = 6)
+library(readxl)
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+library(knitr)
+```
+
+# Why this exists
+
+`10_mass_decline_summary.Rmd` shows the Common Tern chick mass decline
+using normalized metrics (ratio, SMI) for a technical/expert audience.
+Inbal asked for a version for a meeting with non-experts: same underlying
+finding, but expressed as a single easy number - **how many grams below
+average was last year, and how does it rank against other years** - with
+no "SMI" or "ratio" jargon in the figure itself.
+
+**What "adjusted mass" means here**: chicks are weighed at different
+ages/sizes, so raw grams alone aren't comparable across chicks. We adjust
+each chick's weight to what it would weigh *at the average wing length for
+this colony's chicks* - same idea as "if all chicks were the same size,
+how much would they weigh." This is the same underlying normalization
+(SMI, Peig & Green 2009) used in the full report, just relabeled for a
+non-technical audience. Numbers will match `10_mass_decline_summary.Rmd`'s
+Common Tern chick SMI exactly.
+
+# Data
+
+```{r load-data}
+raw_dir <- "../../data_raw"
+if (!dir.exists(raw_dir)) raw_dir <- "../data_raw"
+if (!dir.exists(raw_dir)) raw_dir <- "data_raw"
+stopifnot(dir.exists(raw_dir))
+
+out_dir <- "../output"
+if (!dir.exists(out_dir)) out_dir <- "output"
+
+ringing_path <- file.path(raw_dir, "ringing_data_raw.xlsx")
+stopifnot(file.exists(ringing_path))
+
+col_names_47 <- c(
+  "CR1","RingReplace","Rec","RingPrefix","RingNum","Species","Sex","Age","Wing","Weight",
+  "Date","Time","Place","Lat","Lon","Ringer","Country","Remarks","Net","CR2","Subsp","Tail","Head",
+  "Breeding","CP1","CP2","CP3","CP4","Colour","D","M","OrigDate","OrigCountry","OrigLat","OrigLon","OrigAge",
+  "OldCR1","OldCR2","OldCR3","OldMetal1","OldMetal2","OilHead","OilWings","OilUpperP","OilUnderP","OilLegs","OilSum"
+)
+raw <- read_excel(ringing_path, sheet = "Data", skip = 2, col_names = col_names_47)
+
+terns <- raw %>%
+  filter(Species == "STEHIR") %>%
+  mutate(
+    year = year(Date),
+    month = month(Date),
+    is_new = is.na(Rec) | trimws(Rec) == "",
+    is_recap = trimws(Rec) == "R" & !is.na(Rec),
+    is_capture = is_new | is_recap
+  )
+
+chicks <- terns %>%
+  filter(is_capture, Age == 3, !is.na(Weight), !is.na(Wing), month %in% 6:8)
+
+wing_mean <- mean(chicks$Wing)
+b <- sd(log(chicks$Weight)) / sd(log(chicks$Wing))
+chicks <- chicks %>%
+  mutate(adj_mass = Weight * (wing_mean / Wing) ^ b)
+
+cat("Common Tern chicks, Jun-Aug, Wing+Weight available: n =", nrow(chicks),
+    "across", n_distinct(chicks$year), "years (", min(chicks$year), "-", max(chicks$year), ")\n")
+cat("Reference wing length used for adjustment:", round(wing_mean, 1), "mm (colony average)\n")
+```
+
+# Per-year numbers
+
+```{r per-year}
+yearly <- chicks %>%
+  group_by(year) %>%
+  summarise(n = n(), mean_adj_mass = mean(adj_mass), .groups = "drop") %>%
+  arrange(year)
+
+overall_avg <- mean(yearly$mean_adj_mass)
+latest_year <- max(yearly$year)
+latest_row <- yearly %>% filter(year == latest_year)
+latest_mean <- latest_row$mean_adj_mass
+deviation <- latest_mean - overall_avg
+
+yearly <- yearly %>%
+  mutate(rank_low_to_high = rank(mean_adj_mass, ties.method = "min"))
+latest_rank <- yearly$rank_low_to_high[yearly$year == latest_year]
+n_years <- nrow(yearly)
+
+kable(yearly %>% mutate(mean_adj_mass = round(mean_adj_mass, 1)),
+      col.names = c("Year", "n chicks", "Mean adjusted mass (g)", "Rank (1 = lowest)"),
+      caption = "Common Tern chick mass, adjusted to average wing length, by year")
+
+ordinal <- function(n) {
+  if (n %% 100 %in% 11:13) return(paste0(n, "th"))
+  switch(as.character(n %% 10), "1" = paste0(n, "st"), "2" = paste0(n, "nd"),
+         "3" = paste0(n, "rd"), paste0(n, "th"))
+}
+
+cat(sprintf(
+  "\n%d: mean adjusted chick mass = %.1f g\n%d-year average = %.1f g\n%s is %.1f g %s the %d-year average\n%s is the %s-lowest of %d years on record (1 = lowest ever)\n",
+  latest_year, latest_mean, n_years, overall_avg,
+  latest_year, abs(deviation), ifelse(deviation < 0, "below", "above"), n_years,
+  latest_year, ordinal(latest_rank), n_years
+))
+```
+
+# Plot (for the meeting slide)
+
+```{r simple-plot, fig.width=10, fig.height=6}
+# Trend-over-time job -> line/point form, not bars: a bar chart would force
+# the y-axis to start at 0, which would visually flatten this real ~4%
+# decline into near-nothing. Position (not bar length) carries the value, so
+# a zoomed-in axis here is honest, not misleading.
+yearly_plot <- yearly %>%
+  mutate(is_latest = year == latest_year,
+         point_group = ifelse(is_latest, "This year", "Other years"))
+
+y_range <- range(yearly_plot$mean_adj_mass)
+y_pad <- 0.12 * diff(y_range)
+
+p <- ggplot(yearly_plot, aes(x = year, y = mean_adj_mass)) +
+  geom_hline(yintercept = overall_avg, linetype = "dashed", linewidth = 0.6, color = "#898781") +
+  geom_line(color = "#52514e", linewidth = 0.6) +
+  geom_point(aes(color = point_group), size = 3.2) +
+  annotate("text", x = min(yearly_plot$year), y = overall_avg + 0.1 * y_pad,
+           label = sprintf("17-year average: %.0f g", overall_avg),
+           hjust = 0, vjust = 0, size = 3.6, color = "#52514e") +
+  annotate("text", x = latest_year, y = latest_mean - 0.35 * y_pad,
+           label = sprintf("%.0f g  (%.1f g below average)\n%s-lowest of %d years",
+                            latest_mean, abs(deviation), ordinal(latest_rank), n_years),
+           hjust = 1, vjust = 1, size = 3.8, fontface = "bold", color = "#e34948", lineheight = 1.15) +
+  scale_color_manual(values = c("This year" = "#e34948", "Other years" = "#898781")) +
+  scale_x_continuous(breaks = yearly_plot$year, expand = expansion(mult = c(0.03, 0.03))) +
+  coord_cartesian(ylim = c(y_range[1] - y_pad, y_range[2] + y_pad), clip = "off") +
+  labs(title = sprintf("%d: Common Tern chicks were unusually light", latest_year),
+       subtitle = "Weight adjusted for chick size so different ages are comparable - compared to 17 years of data",
+       x = NULL, y = "Average chick weight (g)", color = NULL) +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "none",
+        panel.grid.minor = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_line(color = "#e1e0d9"),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(face = "bold"),
+        plot.margin = margin(10, 20, 10, 10))
+p
+
+ggsave(file.path(out_dir, "11_chick_mass_for_meeting.png"), p, width = 10, height = 6, dpi = 300)
+```
